@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial README.md file
 - Initial help documentation
 
+### Fixed
+
+- Fix param block alignment and added help messages to parameters
+
 ## [0.1.0-initial] - 2025-03-10
 
 ### Added

@@ -103,11 +103,13 @@ function Send-TkEmailAppMessage {
         # Common parameters for both parameter sets
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Vault'
+            ParameterSetName = 'Vault',
+            HelpMessage = 'The email address of the recipient.'
         )]
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Manual'
+            ParameterSetName = 'Manual',
+            HelpMessage = 'The email address of the recipient.'
         )]
         [ValidateNotNullOrEmpty()]
         [ValidatePattern('^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')]
@@ -115,11 +117,13 @@ function Send-TkEmailAppMessage {
         $To,
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Vault'
+            ParameterSetName = 'Vault',
+            HelpMessage = 'The email address of the sender.'
         )]
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Manual'
+            ParameterSetName = 'Manual',
+            HelpMessage = 'The email address of the sender.'
         )]
         [ValidateNotNullOrEmpty()]
         [ValidatePattern('^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')]
@@ -127,33 +131,39 @@ function Send-TkEmailAppMessage {
         $FromAddress,
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Vault'
+            ParameterSetName = 'Vault',
+            HelpMessage = 'The subject line of the email.'
         )]
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Manual'
+            ParameterSetName = 'Manual',
+            HelpMessage = 'The subject line of the email.'
         )]
         [ValidateNotNullOrEmpty()]
         [string]
         $Subject,
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Vault'
+            ParameterSetName = 'Vault',
+            HelpMessage = 'The body text of the email.'
         )]
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Manual'
+            ParameterSetName = 'Manual',
+            HelpMessage = 'The body text of the email.'
         )]
         [ValidateNotNullOrEmpty()]
         [string]
         $EmailBody,
         [Parameter(
             Mandatory = $false,
-            ParameterSetName = 'Vault'
+            ParameterSetName = 'Vault',
+            HelpMessage = 'The path to the attachment file.'
         )]
         [Parameter(
             Mandatory = $false,
-            ParameterSetName = 'Manual'
+            ParameterSetName = 'Manual',
+            HelpMessage = 'The path to the attachment file.'
         )]
         [ValidateNotNullOrEmpty()]
         [ValidateScript({ Test-Path $_ -PathType 'Leaf' })]

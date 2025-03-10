@@ -61,20 +61,6 @@ function Publish-TkEmailApp {
         [string]
         $AppPrefix,
         [Parameter(
-            Mandatory = $false,
-            HelpMessage = 'The thumbprint of the certificate to be retrieved.'
-        )]
-        [ValidatePattern('^[A-Fa-f0-9]{40}$')]
-        [string]
-        $CertThumbprint,
-        [Parameter(
-            Mandatory = $false,
-            HelpMessage = 'Key export policy for the certificate.'
-        )]
-        [ValidateSet('Exportable', 'NonExportable')]
-        [string]
-        $KeyExportPolicy = 'NonExportable',
-        [Parameter(
             Mandatory = $true,
             HelpMessage = 'The username of the authorized sender.'
         )]
@@ -88,6 +74,20 @@ function Publish-TkEmailApp {
         [ValidatePattern('^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')]
         [string]
         $MailEnabledSendingGroup,
+        [Parameter(
+            Mandatory = $false,
+            HelpMessage = 'The thumbprint of the certificate to be retrieved.'
+        )]
+        [ValidatePattern('^[A-Fa-f0-9]{40}$')]
+        [string]
+        $CertThumbprint,
+        [Parameter(
+            Mandatory = $false,
+            HelpMessage = 'Key export policy for the certificate.'
+        )]
+        [ValidateSet('Exportable', 'NonExportable')]
+        [string]
+        $KeyExportPolicy = 'NonExportable',
         [Parameter(
             Mandatory = $false,
             HelpMessage = 'If specified, use a custom vault name. Otherwise, use the default.'
