@@ -5,22 +5,21 @@
     .DESCRIPTION
         The Send-TkEmailAppMessage function uses the Microsoft Graph API to send an email to a specified
         recipient. It supports two parameter sets:
-
-        1. 'Vault' (default): Provide an existing app name (AppName) whose credentials are stored in the local
-            secret vault (e.g., GraphEmailAppLocalStore). The function retrieves the AppId, TenantId, and
-            certificate thumbprint automatically.
+        1. 'Vault' (default): Provide an existing app name (AppName) whose credentials are stored in the
+            local secret vault (e.g., GraphEmailAppLocalStore). The function retrieves the AppId, TenantId,
+            and certificate thumbprint automatically.
         2. 'Manual': Provide the AppId, TenantId, and certificate thumbprint yourself, bypassing the vault.
-        In both cases, the function obtains an OAuth2 token (via MSAL.PS) using the specified certificate
-        and uses the Microsoft Graph 'sendMail' endpoint to deliver the message.
+            In both cases, the function obtains an OAuth2 token (via MSAL.PS) using the specified certificate
+            and uses the Microsoft Graph 'sendMail' endpoint to deliver the message.
     .PARAMETER AppName
         [Vault Parameter Set Only]
-        The name of the pre-created Microsoft Graph Email App (stored in GraphEmailAppLocalStore).
-        This parameter is used only if the 'Vault' parameter set is chosen. The function retrieves
-        the AppId, TenantId, and certificate thumbprint from the vault entry.
+        The name of the pre-created Microsoft Graph Email App (stored in GraphEmailAppLocalStore). Used only
+        if the 'Vault' parameter set is chosen. The function retrieves the AppId, TenantId, and certificate
+        thumbprint from the vault entry.
     .PARAMETER AppId
         [Manual Parameter Set Only]
-        The Azure AD application (client) ID to use for sending the email. Must be used together with
-        TenantId and CertThumbprint in the 'Manual' parameter set.
+        The Azure AD application (client) ID to use for sending the email. Must be used together with TenantId
+        and CertThumbprint in the 'Manual' parameter set.
     .PARAMETER TenantId
         [Manual Parameter Set Only]
         The Azure AD tenant ID (GUID or domain name). Must be used together with AppId and CertThumbprint
@@ -42,27 +41,23 @@
     .EXAMPLE
         # Using the 'Vault' parameter set
         Send-TkEmailAppMessage -AppName "GraphEmailApp" -To "recipient@example.com" -FromAddress "sender@example.com" `
-                            -Subject "Test Email" -EmailBody "This is a test email."
-
-        In this example, the function retrieves the app's credentials (AppId, TenantId, CertThumbprint) from the
-        local vault (GraphEmailAppLocalStore) under the secret name "GraphEmailApp."
+            -Subject "Test Email" -EmailBody "This is a test email."
+        Retrieves the app's credentials (AppId, TenantId, CertThumbprint) from the local vault under the
+        secret name "GraphEmailApp" and sends an email.
     .EXAMPLE
         # Using the 'Manual' parameter set
         Send-TkEmailAppMessage -AppId "00000000-1111-2222-3333-444444444444" -TenantId "contoso.onmicrosoft.com" `
-                            -CertThumbprint "AABBCCDDEEFF11223344556677889900" -To "recipient@example.com" `
-                            -FromAddress "sender@example.com" -Subject "Manual Email" -EmailBody "Hello from Manual!"
-
-        In this example, no vault entry is used. Instead, the function directly uses the provided AppId,
-        TenantId, and CertThumbprint to obtain a token and send an email.
+            -CertThumbprint "AABBCCDDEEFF11223344556677889900" -To "recipient@example.com" -FromAddress "sender@example.com" `
+            -Subject "Manual Email" -EmailBody "Hello from Manual!"
+        Uses the provided AppId, TenantId, and CertThumbprint directly (no vault) to obtain a token and send an email.
     .NOTES
         - This function requires the Microsoft.Graph, SecretManagement, SecretManagement.JustinGrote.CredMan,
-            and MSAL.PS modules to be installed and imported (handled automatically via Initialize-TkModuleEnv).
+            and MSAL.PS modules to be installed (handled automatically via Initialize-TkModuleEnv).
         - For the 'Vault' parameter set, the local vault secret must store JSON properties including AppId,
             TenantID, and CertThumbprint.
-        - Refer to https://learn.microsoft.com/en-us/graph/outlook-send-mail for more details on sending mail
+        - Refer to https://learn.microsoft.com/en-us/graph/outlook-send-mail for details on sending mail
             via Microsoft Graph.
 #>
-
 function Send-TkEmailAppMessage {
     [CmdletBinding(DefaultParameterSetName = 'Vault')]
     param(
@@ -103,11 +98,13 @@ function Send-TkEmailAppMessage {
         # Common parameters for both parameter sets
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Vault'
+            ParameterSetName = 'Vault',
+            HelpMessage = 'The email address of the recipient.'
         )]
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Manual'
+            ParameterSetName = 'Manual',
+            HelpMessage = 'The email address of the recipient.'
         )]
         [ValidateNotNullOrEmpty()]
         [ValidatePattern('^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')]
@@ -115,11 +112,13 @@ function Send-TkEmailAppMessage {
         $To,
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Vault'
+            ParameterSetName = 'Vault',
+            HelpMessage = 'The email address of the sender.'
         )]
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Manual'
+            ParameterSetName = 'Manual',
+            HelpMessage = 'The email address of the sender.'
         )]
         [ValidateNotNullOrEmpty()]
         [ValidatePattern('^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')]
@@ -127,33 +126,39 @@ function Send-TkEmailAppMessage {
         $FromAddress,
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Vault'
+            ParameterSetName = 'Vault',
+            HelpMessage = 'The subject line of the email.'
         )]
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Manual'
+            ParameterSetName = 'Manual',
+            HelpMessage = 'The subject line of the email.'
         )]
         [ValidateNotNullOrEmpty()]
         [string]
         $Subject,
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Vault'
+            ParameterSetName = 'Vault',
+            HelpMessage = 'The body text of the email.'
         )]
         [Parameter(
             Mandatory = $true,
-            ParameterSetName = 'Manual'
+            ParameterSetName = 'Manual',
+            HelpMessage = 'The body text of the email.'
         )]
         [ValidateNotNullOrEmpty()]
         [string]
         $EmailBody,
         [Parameter(
             Mandatory = $false,
-            ParameterSetName = 'Vault'
+            ParameterSetName = 'Vault',
+            HelpMessage = 'The path to the attachment file.'
         )]
         [Parameter(
             Mandatory = $false,
-            ParameterSetName = 'Manual'
+            ParameterSetName = 'Manual',
+            HelpMessage = 'The path to the attachment file.'
         )]
         [ValidateNotNullOrEmpty()]
         [ValidateScript({ Test-Path $_ -PathType 'Leaf' })]

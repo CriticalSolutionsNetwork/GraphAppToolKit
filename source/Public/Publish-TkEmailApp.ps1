@@ -10,17 +10,17 @@
     .PARAMETER AppPrefix
         A unique prefix for the Graph Email App to initialize. Ensure it is used consistently for
         grouping purposes (2-4 alphanumeric characters).
+    .PARAMETER AuthorizedSenderUserName
+        The username of the authorized sender.
+    .PARAMETER MailEnabledSendingGroup
+        The mail-enabled group to which the sender belongs. This will be used to assign
+        app policy restrictions.
     .PARAMETER CertThumbprint
         An optional parameter indicating the thumbprint of the certificate to be retrieved. If not
         specified, a self-signed certificate will be generated.
     .PARAMETER KeyExportPolicy
         Specifies the key export policy for the newly created certificate. Valid values are
         'Exportable' or 'NonExportable'. Defaults to 'NonExportable'.
-    .PARAMETER AuthorizedSenderUserName
-        The username of the authorized sender.
-    .PARAMETER MailEnabledSendingGroup
-        The mail-enabled group to which the sender belongs. This will be used to assign
-        app policy restrictions.
     .PARAMETER VaultName
         If specified, the name of the vault to store the app's credentials. Otherwise,
         defaults to 'GraphEmailAppLocalStore'.
@@ -42,7 +42,6 @@
         This cmdlet requires that the user running the cmdlet have the necessary permissions to
         create the app and connect to Exchange Online. In addition, a mail-enabled security group
         must already exist in Exchange Online for the MailEnabledSendingGroup parameter.
-
         Permissions required:
             'Application.ReadWrite.All',
             'DelegatedPermissionGrant.ReadWrite.All',
@@ -61,20 +60,6 @@ function Publish-TkEmailApp {
         [string]
         $AppPrefix,
         [Parameter(
-            Mandatory = $false,
-            HelpMessage = 'The thumbprint of the certificate to be retrieved.'
-        )]
-        [ValidatePattern('^[A-Fa-f0-9]{40}$')]
-        [string]
-        $CertThumbprint,
-        [Parameter(
-            Mandatory = $false,
-            HelpMessage = 'Key export policy for the certificate.'
-        )]
-        [ValidateSet('Exportable', 'NonExportable')]
-        [string]
-        $KeyExportPolicy = 'NonExportable',
-        [Parameter(
             Mandatory = $true,
             HelpMessage = 'The username of the authorized sender.'
         )]
@@ -88,6 +73,20 @@ function Publish-TkEmailApp {
         [ValidatePattern('^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')]
         [string]
         $MailEnabledSendingGroup,
+        [Parameter(
+            Mandatory = $false,
+            HelpMessage = 'The thumbprint of the certificate to be retrieved.'
+        )]
+        [ValidatePattern('^[A-Fa-f0-9]{40}$')]
+        [string]
+        $CertThumbprint,
+        [Parameter(
+            Mandatory = $false,
+            HelpMessage = 'Key export policy for the certificate.'
+        )]
+        [ValidateSet('Exportable', 'NonExportable')]
+        [string]
+        $KeyExportPolicy = 'NonExportable',
         [Parameter(
             Mandatory = $false,
             HelpMessage = 'If specified, use a custom vault name. Otherwise, use the default.'

@@ -2,35 +2,42 @@
     .SYNOPSIS
         Creates or retrieves a mail-enabled security group with a custom or default domain.
     .DESCRIPTION
-        The New-MailEnabledSendingGroup function ensures that a mail-enabled security
-        group is available for restricting email sending. It connects to Exchange Online
-        to verify if a group of the specified name already exists. If the existing group
-        is security-enabled, the function returns it; otherwise, it creates a new group
-        of type "security" using either a custom primary SMTP address (CustomDomain) or
-        a constructed address (DefaultDomain).
+        The New-MailEnabledSendingGroup function ensures that a mail-enabled security group is
+        available for restricting email sending in Exchange Online. If a group of the specified
+        name already exists and is security-enabled, the function returns that group. Otherwise,
+        it creates a new security-enabled distribution group. You can specify either a custom
+        primary SMTP address (via the 'CustomDomain' parameter set) or construct one using an
+        alias and default domain (via the 'DefaultDomain' parameter set).
+        By default, the 'CustomDomain' parameter set is used. If you wish to construct the SMTP
+        address from the alias, switch to the 'DefaultDomain' parameter set.
     .PARAMETER Name
-        The name of the mail-enabled security group to create or retrieve.
+        The name of the mail-enabled security group to create or retrieve. This is also used as
+        the alias if no separate Alias parameter is provided.
     .PARAMETER Alias
         An optional alias for the group. If omitted, the group name is used as the alias.
     .PARAMETER PrimarySmtpAddress
-        (CustomDomain parameter set) The primary SMTP address to assign when using
-        a custom domain (e.g., MyGroup@contoso.com).
+        (CustomDomain parameter set) The full SMTP address for the group (e.g. "MyGroup@contoso.com").
+        This parameter is mandatory when using the 'CustomDomain' parameter set.
     .PARAMETER DefaultDomain
-        (DefaultDomain parameter set) The domain to append to the alias, forming
-        an SMTP address (e.g., Alias@DefaultDomain).
+        (DefaultDomain parameter set) The domain portion to be appended to the group alias (e.g.
+        "Alias@DefaultDomain"). This parameter is mandatory when using the 'DefaultDomain' parameter set.
     .EXAMPLE
         PS C:\> New-MailEnabledSendingGroup -Name "SecureSenders" -DefaultDomain "contoso.com"
-
-        Creates a new mail-enabled security group named "SecureSenders" with
-        a primary SMTP address of SecureSenders@contoso.com.
+        Creates a new mail-enabled security group named "SecureSenders" with a primary SMTP address
+        of SecureSenders@contoso.com.
+    .EXAMPLE
+        PS C:\> New-MailEnabledSendingGroup -Name "SecureSenders" -Alias "Senders" -PrimarySmtpAddress "Senders@customdomain.org"
+        Creates a new mail-enabled security group named "SecureSenders" with an alias "Senders"
+        and a primary SMTP address of Senders@customdomain.org.
     .INPUTS
         None. This function does not accept pipeline input.
     .OUTPUTS
         Microsoft.Exchange.Data.Directory.Management.DistributionGroup
         Returns the newly created or existing mail-enabled security group object.
     .NOTES
-        Requires connectivity to Exchange Online. The caller must have sufficient
-        privileges to create or modify distribution groups.
+        - Requires connectivity to Exchange Online (Connect-TkMsService -ExchangeOnline).
+        - The caller must have sufficient privileges to create or modify distribution groups.
+        - DefaultParameterSetName = 'CustomDomain'.
 #>
 
 function New-MailEnabledSendingGroup {

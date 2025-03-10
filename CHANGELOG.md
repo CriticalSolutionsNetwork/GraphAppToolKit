@@ -7,4 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add tools for documentation and initial HTML help
+- Initial README.md file
+- Initial help documentation
+- Updated Help docs and readme post initial testing
+
+### Fixed
+
+- Fix param block alignment and added help messages to parameters
+- Aligned comment blocks in functions with the code
+
+## [0.1.0-initial] - 2025-03-10
+
+### Added
+
 - Initial release of GraphAppToolkit

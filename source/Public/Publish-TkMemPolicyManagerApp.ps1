@@ -2,17 +2,16 @@
     .SYNOPSIS
         Publishes a new MEM (Intune) Policy Manager App in Azure AD with read-only or read-write permissions.
     .DESCRIPTION
-        The Publish-TkMemPolicyManagerApp function creates an Azure AD application
-        intended for managing Microsoft Endpoint Manager (MEM/Intune) policies.
-        It optionally creates or retrieves a certificate, configures the necessary
-        Microsoft Graph permissions for read-only or read-write access, and stores
+        The Publish-TkMemPolicyManagerApp function creates an Azure AD application intended for managing
+        Microsoft Endpoint Manager (MEM/Intune) policies. It optionally creates or retrieves a certificate,
+        configures the necessary Microsoft Graph permissions for read-only or read-write access, and stores
         the resulting app credentials in a SecretManagement vault.
     .PARAMETER AppPrefix
-        A 2-4 character prefix used to build the application name (e.g., CORP, MSN).
-        This helps uniquely identify the app in Azure AD.
+        A 2-4 character prefix used to build the application name (e.g., CORP, MSN). This helps uniquely
+        identify the app in Azure AD.
     .PARAMETER CertThumbprint
-        The thumbprint of an existing certificate in the current user's certificate
-        store. If omitted, a new self-signed certificate is created.
+        The thumbprint of an existing certificate in the current user's certificate store. If omitted,
+        a new self-signed certificate is created.
     .PARAMETER KeyExportPolicy
         Specifies whether the newly created certificate is 'Exportable' or 'NonExportable'.
         Defaults to 'NonExportable' if not specified.
@@ -22,35 +21,30 @@
     .PARAMETER OverwriteVaultSecret
         If specified, overwrites any existing secret of the same name in the vault.
     .PARAMETER ReadWrite
-        If specified, grants read-write MEM/Intune permissions. Otherwise, read-only
-        permissions are granted.
+        If specified, grants read-write MEM/Intune permissions. Otherwise, read-only permissions are granted.
     .PARAMETER ReturnParamSplat
-        If specified, returns a parameter splat string for use in other functions.
-        Otherwise, returns a PSCustomObject containing the app details.
+        If specified, returns a parameter splat string for use in other functions. Otherwise, returns
+        a PSCustomObject containing the app details.
     .EXAMPLE
         PS C:\> Publish-TkMemPolicyManagerApp -AppPrefix "CORP" -ReadWrite
-
         Creates a new MEM Policy Manager App with read-write permissions, retrieves or
         creates a certificate, and stores the credentials in the default vault.
     .INPUTS
         None. This function does not accept pipeline input.
     .OUTPUTS
-        By default, returns a PSCustomObject (TkMemPolicyManagerAppParams) with details
-        of the newly created app (AppId, certificate thumbprint, tenant ID, etc.). If
-        -ReturnParamSplat is used, returns a parameter splat string.
+        By default, returns a PSCustomObject (TkMemPolicyManagerAppParams) with details of the newly created
+        app (AppId, certificate thumbprint, tenant ID, etc.). If -ReturnParamSplat is used, returns a parameter
+        splat string.
     .NOTES
-        This function requires the Microsoft.Graph module for application creation and
-        the user must have permissions in Azure AD to register and grant permissions
-        to the application. After creation, admin consent may be needed to finalize
-        the permission grants.
-
-            Permissions required:
-                'Application.ReadWrite.All',
-                'DelegatedPermissionGrant.ReadWrite.All',
-                'Directory.ReadWrite.All',
-                'RoleManagement.ReadWrite.Directory'
+        This function requires the Microsoft.Graph module for application creation and the user must have
+        permissions in Azure AD to register and grant permissions to the application. After creation, admin
+        consent may be needed to finalize the permission grants.
+        Permissions required:
+            'Application.ReadWrite.All',
+            'DelegatedPermissionGrant.ReadWrite.All',
+            'Directory.ReadWrite.All',
+            'RoleManagement.ReadWrite.Directory'
 #>
-
 function Publish-TkMemPolicyManagerApp {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     param(
