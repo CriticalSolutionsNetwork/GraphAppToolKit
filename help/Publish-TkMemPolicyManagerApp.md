@@ -204,9 +204,9 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ### None. This function does not accept pipeline input.
 ## OUTPUTS
 
-### By default, returns a PSCustomObject (TkMemPolicyManagerAppParams) with details
-### of the newly created app (AppId, certificate thumbprint, tenant ID, etc.). If
-### -ReturnParamSplat is used, returns a parameter splat string.
+### By default, returns a PSCustomObject (TkMemPolicyManagerAppParams) with details of the newly created
+### app (AppId, certificate thumbprint, tenant ID, etc.). If -ReturnParamSplat is used, returns a parameter
+### splat string.
 ## NOTES
 This function requires the Microsoft.Graph module for application creation and
 the user must have permissions in Azure AD to register and grant permissions

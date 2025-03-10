@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add tools for documentation and initial HTML help
 - Initial README.md file
 - Initial help documentation
+- Updated Help docs and readme post initial testing
 
 ### Fixed
 

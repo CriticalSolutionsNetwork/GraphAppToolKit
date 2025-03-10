@@ -43,7 +43,7 @@ EXAMPLES
         -AuthorizedSenderUserName "jdoe@example.com" `
         -MailEnabledSendingGroup "GraphAPIMailGroup@example.com" `
         -CertThumbprint "AABBCCDDEEFF11223344556677889900"
-
+    
     # Example 2: Send an email with attachments using the newly created app
     Send-TkEmailAppMessage -AppName "CN=ABC-AuditGraphEmail-AD.EXAMPLE.COM-As-jdoe" `
         -To "recipient@example.com" `

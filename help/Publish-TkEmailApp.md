@@ -13,10 +13,10 @@ Deploys a new Microsoft Graph Email app and associates it with a certificate for
 ## SYNTAX
 
 ```
-Publish-TkEmailApp [-AppPrefix] <String> [[-CertThumbprint] <String>] [[-KeyExportPolicy] <String>]
- [-AuthorizedSenderUserName] <String> [-MailEnabledSendingGroup] <String> [[-VaultName] <String>]
- [-OverwriteVaultSecret] [-ReturnParamSplat] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm]
- [<CommonParameters>]
+Publish-TkEmailApp [-AppPrefix] <String> [-AuthorizedSenderUserName] <String>
+ [-MailEnabledSendingGroup] <String> [[-CertThumbprint] <String>] [[-KeyExportPolicy] <String>]
+ [[-VaultName] <String>] [-OverwriteVaultSecret] [-ReturnParamSplat] [-ProgressAction <ActionPreference>]
+ [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -54,6 +54,38 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -AuthorizedSenderUserName
+The username of the authorized sender.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -MailEnabledSendingGroup
+The mail-enabled group to which the sender belongs.
+This will be used to assign
+app policy restrictions.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -CertThumbprint
 An optional parameter indicating the thumbprint of the certificate to be retrieved.
 If not
@@ -65,7 +97,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 2
+Position: 4
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -83,40 +115,8 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 3
-Default value: NonExportable
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -AuthorizedSenderUserName
-The username of the authorized sender.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: True
-Position: 4
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -MailEnabledSendingGroup
-The mail-enabled group to which the sender belongs.
-This will be used to assign
-app policy restrictions.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: True
 Position: 5
-Default value: None
+Default value: NonExportable
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
