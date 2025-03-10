@@ -7,4 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add tools for documentation and initial HTML help
+
+## [0.1.0-initial] - 2025-03-10
+
+### Added
+
 - Initial release of GraphAppToolkit
