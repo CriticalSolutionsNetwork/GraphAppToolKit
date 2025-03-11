@@ -106,9 +106,14 @@ function Publish-TkM365AuditApp {
         }
         Write-AuditLog '###############################################'
         Write-AuditLog 'Initializing M365 Audit App publication process...'
-
+        $scopesNeeded = @(
+            'Application.ReadWrite.All',
+            'DelegatedPermissionGrant.ReadWrite.All',
+            'Directory.ReadWrite.All',
+            'RoleManagement.ReadWrite.Directory'
+        )
         # 1) Connect to Graph so we can query permissions & create the app
-        Connect-TkMsService -MgGraph
+        Connect-TkMsService -MgGraph -GraphAuthScopes $scopesNeeded
     }
     process {
         try {
@@ -197,7 +202,7 @@ Graph App Permissions: $($graphPerms -join ', ')
 SharePoint App Permissions: $($sharePointPerms -join ', ')
 Exchange App Permissions: $($exchangePerms -join ', ')
 Roles Assigned: 'Exchange Administrator', 'Global Reader'
-Authorized Client IP: $((Invoke-WebRequest ifconfig.me/ip).Content.Trim())
+Authorized Client IP: $((Invoke-RestMethod ifconfig.me/ip))
 Client Hostname: $env:COMPUTERNAME
 "@
             if ($PSCmdlet.ShouldProcess($appName, 'Create and configure M365 Audit App in EntraAD')) {

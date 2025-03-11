@@ -7,6 +7,11 @@ function Connect-TkMsService {
         [Switch]
         $MgGraph,
         [Parameter(
+            HelpMessage = 'Graph Scopes.'
+        )]
+        [String[]]
+        $GraphAuthScopes,
+        [Parameter(
             HelpMessage = 'Connect to Exchange Online.'
         )]
         [Switch]
@@ -36,12 +41,15 @@ function Connect-TkMsService {
                     Get-MgUser -Top 1 -ErrorAction Stop | Out-Null
                     $ContextMg = Get-MgContext -ErrorAction Stop
                     # Check required scopes
-                    $scopesNeeded = @(
-                        'Application.ReadWrite.All',
-                        'DelegatedPermissionGrant.ReadWrite.All',
-                        'Directory.ReadWrite.All',
-                        'RoleManagement.ReadWrite.Directory'
-                    )
+                    <#
+                        $scopesNeeded = @(
+                            'Application.ReadWrite.All',
+                            'DelegatedPermissionGrant.ReadWrite.All',
+                            'Directory.ReadWrite.All',
+                            'RoleManagement.ReadWrite.Directory'
+                        )
+                    #>
+                    $scopesNeeded = $GraphAuthScopes
                     $missing = $scopesNeeded | Where-Object { $ContextMg.Scopes -notcontains $_ }
                     if ($missing) {
                         Write-AuditLog "The following needed scopes are missing: $($missing -join ', ')"
@@ -65,24 +73,16 @@ function Connect-TkMsService {
                         # Remove the old context so we can connect fresh
                         Remove-MgContext -ErrorAction SilentlyContinue
                         Write-AuditLog 'Creating a new Microsoft Graph session.'
-                        Connect-MgGraph -Scopes `
-                            'Application.ReadWrite.All', `
-                            'DelegatedPermissionGrant.ReadWrite.All', `
-                            'Directory.ReadWrite.All', `
-                            'RoleManagement.ReadWrite.Directory' `
-                            -ErrorAction Stop
+                        Connect-MgGraph -Scopes $scopesNeeded `
+                            -ErrorAction Stop -Confirm
                         Write-AuditLog 'Connected to Microsoft Graph.'
                     }
                 }
                 else {
                     # No valid session, so just connect
                     Write-AuditLog 'No valid Microsoft Graph session found. Connecting...'
-                    Connect-MgGraph -Scopes `
-                        'Application.ReadWrite.All', `
-                        'DelegatedPermissionGrant.ReadWrite.All', `
-                        'Directory.ReadWrite.All', `
-                        'RoleManagement.ReadWrite.Directory' `
-                        -ErrorAction Stop
+                    Connect-MgGraph -Scopes $scopesNeeded `
+                        -ErrorAction Stop -Confirm
                     Write-AuditLog 'Connected to Microsoft Graph.'
                 }
             }

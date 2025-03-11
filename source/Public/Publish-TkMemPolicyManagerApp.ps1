@@ -118,7 +118,12 @@ function Publish-TkMemPolicyManagerApp {
             }
             Initialize-TkModuleEnv @ModParams
             # Only connect to Graph
-            Connect-TkMsService -MgGraph
+            $scopesNeeded = @(
+                'Application.ReadWrite.All',
+                'DelegatedPermissionGrant.ReadWrite.All',
+                'Directory.ReadWrite.All'
+            )
+            Connect-TkMsService -MgGraph -GraphAuthScopes $scopesNeeded
             $Context = Get-MgContext -ErrorAction Stop
         }
         catch {
@@ -184,7 +189,7 @@ Certificate Expires: $($CertDetails.CertExpires)
 Tenant ID: $($Context.TenantId)
 Graph App Permissions: $($permissions -join ', ')
 Read-Write Permissions: $(if ($ReadWrite) { 'ReadWrite' } else { 'Read-Only' })
-Authorized Client IP: $((Invoke-WebRequest ifconfig.me/ip).Content.Trim())
+Authorized Client IP: $((Invoke-RestMethod ifconfig.me/ip))
 Client Hostname: $env:COMPUTERNAME
 "@
             if ($PSCmdlet.ShouldProcess("MemPolicyManager App '$($AppSettings.AppName)'",

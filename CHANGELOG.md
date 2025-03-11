@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added cert options to the GraphAppToolkit send email.
+- Updated auth methods to invoke needed permissions only.
+
+### Fixed
+
+- Fixed formatting.
+
+## [0.1.2] - 2025-03-11
+
+### Added
+
 - Added class definitions for GraphAppToolkit
 
 ## [0.1.1] - 2025-03-10

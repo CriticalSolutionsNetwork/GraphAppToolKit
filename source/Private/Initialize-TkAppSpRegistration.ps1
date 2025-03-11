@@ -20,7 +20,8 @@ function Initialize-TkAppSpRegistration {
             Mandatory = $false,
             HelpMessage = 'One or more OAuth2 scopes to grant. Defaults to Mail.Send.'
         )]
-        [psobject[]]$Scopes = [PSCustomObject]@{
+        [psobject[]]
+        $Scopes = [PSCustomObject]@{
             Graph = @('Mail.Send')
         },
         [Parameter(
