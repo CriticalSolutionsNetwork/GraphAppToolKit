@@ -129,21 +129,18 @@ function Publish-TkM365AuditApp {
             $sharePoint = @('Sites.Read.All', 'Sites.FullControl.All')
             $exchange = @('Exchange.ManageAsApp')
             # Decide which sets to use
-            $graphPerms = $graph
-            $sharePointPerms = $sharePoint
-            $exchangePerms = $exchange
             $permissionsObject = [PSCustomObject]@{
-                Graph      = $graphPerms
-                SharePoint = $sharePointPerms
-                Exchange   = $exchangePerms
+                Graph      = $graph
+                SharePoint = $sharePoint
+                Exchange   = $exchange
             }
-            Write-AuditLog "Graph Perms: $($graphPerms -join ', ')"
-            Write-AuditLog "SharePoint Perms: $($sharePointPerms -join ', ')"
-            Write-AuditLog "Exchange Perms: $($exchangePerms -join ', ')"
+            Write-AuditLog "Graph Perms: $($graph -join ', ')"
+            Write-AuditLog "SharePoint Perms: $($sharePoint -join ', ')"
+            Write-AuditLog "Exchange Perms: $($exchange -join ', ')"
             $Context = Get-MgContext -ErrorAction Stop
             # Gather the resource access objects (GUIDs) for all these perms
             $AppSettings = New-TkRequiredResourcePermissionObject `
-                -GraphPermissions $graphPerms `
+                -GraphPermissions $graph `
                 -Scenario '365Audit' `
                 -ErrorAction Stop
             # Generate the app name
@@ -153,21 +150,23 @@ function Publish-TkM365AuditApp {
                 -ErrorAction Stop
             Write-AuditLog "Proposed new M365 Audit App name: $appName"
             # Retrieve or create the certificate
-            $CertDetails = Initialize-TkAppAuthCertificate `
-                -AppName $appName `
-                -Thumbprint $CertThumbprint `
-                -Subject "CN=$appName" `
-                -KeyExportPolicy $KeyExportPolicy `
-                -ErrorAction Stop
+            $AppAuthCertificateParams = @{
+                AppName         = $appName
+                Thumbprint      = $CertThumbprint
+                Subject         = "CN=$appName"
+                KeyExportPolicy = $KeyExportPolicy
+                ErrorAction     = 'Stop'
+            }
+            $CertDetails = Initialize-TkAppAuthCertificate @AppAuthCertificateParams
             Write-AuditLog "Certificate Thumbprint: $($CertDetails.CertThumbprint); Expires: $($CertDetails.CertExpires)."
             # Show user proposed config
             $proposed = [PSCustomObject]@{
                 ProposedAppName       = $appName
                 CertificateThumbprint = $CertDetails.CertThumbprint
                 CertExpires           = $CertDetails.CertExpires
-                GraphPermissions      = $graphPerms -join ', '
-                SharePointPermissions = $sharePointPerms -join ', '
-                ExchangePermissions   = $exchangePerms -join ', '
+                GraphPermissions      = $graph -join ', '
+                SharePointPermissions = $sharePoint -join ', '
+                ExchangePermissions   = $exchange -join ', '
             }
             Write-AuditLog 'Proposed creation of a new M365 Audit App with the following properties:'
             Write-AuditLog "$($proposed | Format-List)"
@@ -175,9 +174,9 @@ function Publish-TkM365AuditApp {
             $notesHash = [ordered]@{
                 'Certificate Thumbprint'   = $($CertDetails.CertThumbprint)
                 'Certificate Expires'      = $($CertDetails.CertExpires)
-                'GraphAppPermissions'      = $($graphPerms -join ', ')
-                'SharePointAppPermissions' = $($sharePointPerms -join ', ')
-                'ExchangeAppPermissions'   = $($exchangePerms -join ', ')
+                'GraphAppPermissions'      = $($graph -join ', ')
+                'SharePointAppPermissions' = $($sharePoint -join ', ')
+                'ExchangeAppPermissions'   = $($exchange -join ', ')
                 'RolesAssigned'            = @('Exchange Administrator', 'Global Reader')
                 'AuthorizedClient IP'      = $((Invoke-RestMethod ifconfig.me/ip))
                 'ClientOrUserHostname'     = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { $env:USERNAME }
@@ -186,23 +185,27 @@ function Publish-TkM365AuditApp {
             $Notes = $notesHash | ConvertTo-Json #-Compress
             if ($PSCmdlet.ShouldProcess($appName, 'Create and configure M365 Audit App in EntraAD')) {
                 Write-AuditLog 'Creating new EntraAD application with all resource permissions...'
-                $appRegistration = New-TkAppRegistration `
-                    -DisplayName $appName `
-                    -CertThumbprint $CertDetails.CertThumbprint `
-                    -RequiredResourceAccessList $AppSettings.RequiredResourceAccessList `
-                    -Notes $Notes `
-                    -SignInAudience 'AzureADMyOrg' `
-                    -ErrorAction Stop
+                $AppRegistrationParams = @{
+                    DisplayName                = $appName
+                    CertThumbprint             = $CertDetails.CertThumbprint
+                    RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
+                    SignInAudience             = 'AzureADMyOrg'
+                    Notes                      = $Notes
+                    ErrorAction                = 'Stop'
+                }
+                $appRegistration = New-TkAppRegistration @AppRegistrationParams
                 Write-AuditLog "App registered. Object ID = $($appRegistration.Id), ClientId = $($appRegistration.AppId)."
                 # Grant the oauth2 permissions to service principal
-                $ConsentUrl = Initialize-TkAppSpRegistration `
-                    -AppRegistration $appRegistration `
-                    -Context $Context `
-                    -RequiredResourceAccessList $AppSettings.RequiredResourceAccessList `
-                    -Scopes $permissionsObject `
-                    -AuthMethod 'Certificate' `
-                    -CertThumbprint $CertDetails.CertThumbprint `
-                    -ErrorAction Stop
+                $AppSpRegistrationParams = @{
+                    AppRegistration            = $appRegistration
+                    Context                    = $Context
+                    RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
+                    Scopes                     = $permissionsObject
+                    AuthMethod                 = 'Certificate'
+                    CertThumbprint             = $CertDetails.CertThumbprint
+                    ErrorAction                = 'Stop'
+                }
+                $ConsentUrl = Initialize-TkAppSpRegistration @AppSpRegistrationParams
                 [void](Read-Host 'Provide admin consent now, or copy the url and provide admin consent later. Press Enter to continue.')
                 Write-AuditLog 'Appending Exchange Administrator role to the app.'
                 $exoAdminRole = Get-MgDirectoryRole -Filter "displayName eq 'Exchange Administrator'" -ErrorAction Stop
@@ -225,37 +228,29 @@ function Publish-TkM365AuditApp {
                     -BodyParameter $body `
                     -ErrorAction Stop
                 # Store final app info in the vault
-                $output = [PSCustomObject]@{
-                    AppName               = $("CN=$appName")
+                $M365AuditAppParams = @{
+                    AppName               = "CN=$appName"
                     AppId                 = $appRegistration.AppId
                     ObjectId              = $appRegistration.Id
                     TenantId              = $context.TenantId
                     CertThumbprint        = $CertDetails.CertThumbprint
                     CertExpires           = $CertDetails.CertExpires
                     ConsentUrl            = $ConsentUrl
-                    MgGraphPermissions    = "$($graphPerms)"
-                    SharePointPermissions = "$($sharePointPerms)"
-                    ExchangePermissions   = "$($exchangePerms)"
+                    MgGraphPermissions    = "$graph"
+                    SharePointPermissions = "$sharePoint"
+                    ExchangePermissions   = "$exchange"
                 }
-                $m365AuditApp = [TkM365AuditAppParams]::new(
-                    $output.AppName,
-                    $output.AppId,
-                    $output.ObjectId,
-                    $output.TenantId,
-                    $output.CertThumbprint,
-                    $output.CertExpires,
-                    $output.ConsentUrl,
-                    $output.MgGraphPermissions,
-                    $output.SharePointPermissions,
-                    $output.ExchangePermissions
-                )
+                [TkM365AuditAppParams]$m365AuditApp = New-TkM365AuditAppParams @M365AuditAppParams
                 # Save to vault
-                Set-TkJsonSecret `
-                    -Name "CN=$appName" `
-                    -InputObject $output `
-                    -VaultName $VaultName `
-                    -Overwrite:$OverwriteVaultSecret
-                Write-AuditLog "Saved app credentials to vault '$VaultName'."
+                $JsonSecretParams = @{
+                    Name        = "CN=$appName"
+                    InputObject = $m365AuditApp
+                    VaultName   = $VaultName
+                    Overwrite   = $OverwriteVaultSecret
+                    ErrorAction = 'Stop'
+                }
+                $savedName = Set-TkJsonSecret @JsonSecretParams
+                Write-AuditLog "Secret '$savedName' saved to vault '$VaultName'."
                 # Return as either param splat or plain object
                 if ($ReturnParamSplat) {
                     return $m365AuditApp | ConvertTo-ParameterSplat

@@ -56,7 +56,8 @@ function Publish-TkEmailApp {
         [Parameter(
             Mandatory = $false,
             ParameterSetName = 'CreateNewApp',
-            HelpMessage = 'The prefix used to initialize the Graph Email App. 2-4 characters letters and numbers only.'
+            HelpMessage = `
+                'The prefix used to initialize the Graph Email App. 2-4 characters letters and numbers only.'
         )]
         [ValidatePattern('^[A-Z0-9]{2,4}$')]
         [string]
@@ -64,7 +65,8 @@ function Publish-TkEmailApp {
         [Parameter(
             Mandatory = $true,
             ParameterSetName = 'CreateNewApp',
-            HelpMessage = 'The username of the authorized sender.'
+            HelpMessage = `
+                'The username of the authorized sender.'
         )]
         [ValidatePattern('^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')]
         [string]
@@ -72,7 +74,8 @@ function Publish-TkEmailApp {
         [Parameter(
             Mandatory = $true,
             ParameterSetName = 'CreateNewApp',
-            HelpMessage = 'The Mail Enabled Sending Group.'
+            HelpMessage = `
+                'The Mail Enabled Sending Group.'
         )]
         [ValidatePattern('^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')]
         [string]
@@ -81,7 +84,8 @@ function Publish-TkEmailApp {
         [Parameter(
             Mandatory = $true,
             ParameterSetName = 'UseExistingApp',
-            HelpMessage = 'The AppId of the existing App Registration to which you want to attach a certificate.'
+            HelpMessage = `
+                'The AppId of the existing App Registration to which you want to attach a certificate.'
         )]
         [ValidatePattern('^[0-9a-fA-F-]{36}$')]
         [string]
@@ -89,45 +93,52 @@ function Publish-TkEmailApp {
         [Parameter(
             Mandatory = $true,
             ParameterSetName = 'UseExistingApp',
-            HelpMessage = 'Prefix to add to certificate subject for existing app.'
+            HelpMessage = `
+                'Prefix to add to certificate subject for existing app.'
         )]
         [Parameter(
             Mandatory = $false,
             ParameterSetName = 'CreateNewApp',
-            HelpMessage = 'Prefix to add to certificate subject for existing app.'
+            HelpMessage = `
+                'Prefix to add to certificate subject for existing app.'
         )]
         [string]
         $CertPrefix,
         # REGION: Shared parameters
         [Parameter(
             Mandatory = $false,
-            HelpMessage = 'The thumbprint of the certificate to be retrieved.'
+            HelpMessage = `
+                'The thumbprint of the certificate to be retrieved.'
         )]
         [ValidatePattern('^[A-Fa-f0-9]{40}$')]
         [string]
         $CertThumbprint,
         [Parameter(
             Mandatory = $false,
-            HelpMessage = 'Key export policy for the certificate.'
+            HelpMessage = `
+                'Key export policy for the certificate.'
         )]
         [ValidateSet('Exportable', 'NonExportable')]
         [string]
         $KeyExportPolicy = 'NonExportable',
         [Parameter(
             Mandatory = $false,
-            HelpMessage = 'If specified, use a custom vault name. Otherwise, use the default.'
+            HelpMessage = `
+                'If specified, use a custom vault name. Otherwise, use the default.'
         )]
         [string]
         $VaultName = 'GraphEmailAppLocalStore',
         [Parameter(
             Mandatory = $false,
-            HelpMessage = 'If specified, overwrite the vault secret if it already exists.'
+            HelpMessage = `
+                'If specified, overwrite the vault secret if it already exists.'
         )]
         [switch]
         $OverwriteVaultSecret,
         [Parameter(
             Mandatory = $false,
-            HelpMessage = 'Return the parameter splat for use in other functions.'
+            HelpMessage = `
+                'Return the parameter splat for use in other functions.'
         )]
         [switch]
         $ReturnParamSplat
@@ -200,12 +211,14 @@ function Publish-TkEmailApp {
                     $ClientCertPrefix = "$AppPrefix"
                 }
                 # 3) Create or retrieve the certificate
-                $CertDetails = Initialize-TkAppAuthCertificate `
-                    -AppName $AppSettings.AppName `
-                    -Thumbprint $CertThumbprint `
-                    -Subject $CertName `
-                    -KeyExportPolicy $KeyExportPolicy `
-                    -ErrorAction Stop
+                $AppAuthCertificateParams = @{
+                    AppName         = $AppSettings.AppName
+                    Thumbprint      = $CertThumbprint
+                    Subject         = $CertName
+                    KeyExportPolicy = $KeyExportPolicy
+                    ErrorAction     = 'Stop'
+                }
+                $CertDetails = Initialize-TkAppAuthCertificate @AppAuthCertificateParams
                 # 4) Show the proposed object
                 $proposedObject = [PSCustomObject]@{
                     ProposedAppName                 = $AppSettings.AppName
@@ -235,28 +248,33 @@ function Publish-TkEmailApp {
                         # Convert that hashtable to a JSON string:
                         $Notes = $notesHash | ConvertTo-Json #-Compress
                         # 6) Register the new enterprise app for Graph
-                        $appRegistration = New-TkAppRegistration `
-                            -DisplayName $AppSettings.AppName `
-                            -CertThumbprint $CertDetails.CertThumbprint `
-                            -RequiredResourceAccessList $AppSettings.RequiredResourceAccessList `
-                            -SignInAudience 'AzureADMyOrg' `
-                            -Notes $Notes `
-                            -ErrorAction Stop
+                        $AppRegistrationParams = @{
+                            DisplayName                = $AppSettings.AppName
+                            CertThumbprint             = $CertDetails.CertThumbprint
+                            RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
+                            SignInAudience             = 'AzureADMyOrg'
+                            Notes                      = $Notes
+                            ErrorAction                = 'Stop'
+                        }
+                        $appRegistration = New-TkAppRegistration @AppRegistrationParams
                         # 7) Initialize the service principal, permissions, etc.
-                        $ConsentUrl = Initialize-TkAppSpRegistration `
-                            -AppRegistration $appRegistration `
-                            -Context $Context `
-                            -RequiredResourceAccessList $AppSettings.RequiredResourceAccessList `
-                            -AuthMethod 'Certificate' `
-                            -CertThumbprint $CertDetails.CertThumbprint `
-                            -ErrorAction Stop
+                        $AppSpRegistrationParams = @{
+                            AppRegistration            = $appRegistration
+                            Context                    = $Context
+                            RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
+                            Scopes                     = $permissionsObject
+                            AuthMethod                 = 'Certificate'
+                            CertThumbprint             = $CertDetails.CertThumbprint
+                            ErrorAction                = 'Stop'
+                        }
+                        $ConsentUrl = Initialize-TkAppSpRegistration @AppSpRegistrationParams
                         [void](Read-Host 'Provide admin consent now, or copy the url and provide admin consent later. Press Enter to continue.')
                         # 8) Create the Exchange Online policy restricting send
                         New-TkExchangeEmailAppPolicy `
                             -AppRegistration $appRegistration `
                             -MailEnabledSendingGroup $MailEnabledSendingGroup | Out-Null
                         # 9) Build final output object
-                        $output = [PSCustomObject]@{
+                        $EmailAppParams = @{
                             AppId                  = $appRegistration.AppId
                             Id                     = $appRegistration.Id
                             AppName                = "CN=$($AppSettings.AppName)"
@@ -265,30 +283,20 @@ function Publish-TkEmailApp {
                             CertThumbprint         = $CertDetails.CertThumbprint
                             ConsentUrl             = $ConsentUrl
                             DefaultDomain          = $MailEnabledSendingGroup.Split('@')[1]
-                            SendAsUser             = ($AppSettings.User.UserPrincipalName.Split('@')[0])
+                            SendAsUser             = $AppSettings.User.UserPrincipalName.Split('@')[0]
                             SendAsUserEmail        = $AppSettings.User.UserPrincipalName
                             TenantID               = $Context.TenantId
                         }
-                        # Create a typed object if needed
-                        $graphEmailApp = [TkEmailAppParams]::new(
-                            $output.AppId,
-                            $output.Id,
-                            $output.AppName,
-                            $output.AppRestrictedSendGroup,
-                            $output.CertExpires,
-                            $output.CertThumbprint,
-                            $output.ConsentUrl,
-                            $output.DefaultDomain,
-                            $output.SendAsUser,
-                            $output.SendAsUserEmail,
-                            $output.TenantID
-                        )
+                        [TkEmailAppParams]$graphEmailApp = New-TkEmailAppParams @EmailAppParams
                         # 10) Store it as JSON in the vault
-                        $secretName = "CN=$($AppSettings.AppName)"
-                        $savedSecretName = Set-TkJsonSecret `
-                            -Name $secretName `
-                            -InputObject $output `
-                            -VaultName $VaultName -Overwrite:$OverwriteVaultSecret
+                        $JsonSecretParams = @{
+                            Name        = "CN=$($AppSettings.AppName)"
+                            InputObject = $graphEmailApp
+                            VaultName   = $VaultName
+                            Overwrite   = $OverwriteVaultSecret
+                            ErrorAction = 'Stop'
+                        }
+                        $savedSecretName = Set-TkJsonSecret @JsonSecretParams
                         Write-AuditLog "Secret '$savedSecretName' saved to vault '$VaultName'."
                     }
                     catch {
@@ -305,8 +313,8 @@ function Publish-TkEmailApp {
             'UseExistingApp' {
                 # Grab MgContext for tenant info
                 Connect-TkMsService `
-                -MgGraph `
-                -GraphAuthScopes $scopesNeeded
+                    -MgGraph `
+                    -GraphAuthScopes $scopesNeeded
                 $Context = Get-MgContext -ErrorAction Stop
                 $ClientCertPrefix = "$CertPrefix"
                 # Retrieve the existing app registration by AppId
@@ -372,35 +380,30 @@ function Publish-TkEmailApp {
                             -Notes $updatedNotes `
                             -ErrorAction Stop | Out-Null
                         # Build an output object similar to "new" scenario
-                        $output = [PSCustomObject]@{
-                            AppId          = $existingApp.AppId
-                            Id             = $existingApp.Id
-                            AppName        = "CN=$updatedString"
-                            CertExpires    = $certDetails.CertExpires
-                            CertThumbprint = $certDetails.CertThumbprint
-                            TenantID       = $Context.TenantId
+                        $EmailAppParams = @{
+                            AppId                  = $appRegistration.AppId
+                            Id                     = $appRegistration.Id
+                            AppName                = "CN=$updatedString"
+                            AppRestrictedSendGroup = $MailEnabledSendingGroup
+                            CertExpires            = $CertDetails.CertExpires
+                            CertThumbprint         = $CertDetails.CertThumbprint
+                            ConsentUrl             = $null
+                            DefaultDomain          = ($notesObject.GraphEmailAppFor.Split('@')[1])
+                            SendAsUser             = ($notesObject.GraphEmailAppFor.Split('@')[0])
+                            SendAsUserEmail        = $notesObject.GraphEmailAppFor
+                            TenantID               = $output.TenantID
                         }
-                        $graphEmailApp = [TkEmailAppParams]::new(
-                            $output.AppId,
-                            $output.Id,
-                            $output.AppName,
-                            $notesObject.RestrictedToGroup, # AppRestrictedSendGroup
-                            $output.CertExpires,
-                            $output.CertThumbprint,
-                            $null, # ConsentUrl (Made as nullable string)
-                            ($notesObject.GraphEmailAppFor.Split('@')[1]), # DefaultDomain
-                            ($notesObject.GraphEmailAppFor.Split('@')[0]), # SendAsUser
-                            $notesObject.GraphEmailAppFor, # SendAsUserEmail
-                            $output.TenantID
-                        )
+                        [TkEmailAppParams]$graphEmailApp = New-TkEmailAppParams @EmailAppParams
                         # Store updated info in the vault
-                        $secretName = "CN=$updatedString"
-                        $savedSecretName = Set-TkJsonSecret `
-                            -Name $secretName `
-                            -InputObject $graphEmailApp `
-                            -VaultName $VaultName `
-                            -Overwrite:$OverwriteVaultSecret
-                        Write-AuditLog "Secret for existing app saved as '$secretName' in vault '$VaultName'."
+                        $JsonSecretParams = @{
+                            Name        = "CN=$updatedString"
+                            InputObject = $graphEmailApp
+                            VaultName   = $VaultName
+                            Overwrite   = $OverwriteVaultSecret
+                            ErrorAction = 'Stop'
+                        }
+                        $savedSecretName = Set-TkJsonSecret @JsonSecretParams
+                        Write-AuditLog "Secret for existing app saved as '$savedSecretName' in vault '$VaultName'."
                     }
                     catch {
                         throw

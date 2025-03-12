@@ -66,7 +66,8 @@ function Publish-TkMemPolicyManagerApp {
         $CertThumbprint,
         [Parameter(
             Mandatory = $false,
-            HelpMessage = 'Key export policy for the certificate.'
+            HelpMessage = `
+                'Key export policy for the certificate.'
         )]
         [ValidateSet('Exportable', 'NonExportable')]
         [string]
@@ -123,16 +124,14 @@ function Publish-TkMemPolicyManagerApp {
                 'DelegatedPermissionGrant.ReadWrite.All',
                 'Directory.ReadWrite.All'
             )
-            Connect-TkMsService -MgGraph -GraphAuthScopes $scopesNeeded
+            Connect-TkMsService `
+                -MgGraph `
+                -GraphAuthScopes $scopesNeeded `
+                -ErrorAction Stop
             $Context = Get-MgContext -ErrorAction Stop
         }
         catch {
-            $line = $_.InvocationInfo.Line
-            $lineNum = $_.InvocationInfo.ScriptLineNumber
-            throw [System.Management.Automation.RuntimeException]::new(
-                "Error in $($MyInvocation.MyCommand.Name) at line $lineNum`:`n'$line' - $($_.Exception.Message)",
-                $_.Exception
-            )
+            throw
         }
     }
     process {
@@ -158,19 +157,25 @@ function Publish-TkMemPolicyManagerApp {
             }
             Write-AuditLog "Using the following MEM permissions: $($permissions -join ', ')"
             # 2) Build a Graph context object that looks up these permission IDs
-            $AppSettings = New-TkRequiredResourcePermissionObject -GraphPermissions $permissions
+            $AppSettings = New-TkRequiredResourcePermissionObject `
+                -GraphPermissions $permissions
             # 3) Build an app name for scenario "MemPolicyManager"
-            $appName = New-TkAppName -Prefix $AppPrefix -ScenarioName 'MemPolicyManager'
+            $appName = New-TkAppName `
+                -Prefix $AppPrefix `
+                -ScenarioName 'MemPolicyManager' `
+                -ErrorAction Stop
             # 4) Add TenantId & AppName to the object so we can store them in the final JSON
             $AppSettings | Add-Member -NotePropertyName 'TenantId' -NotePropertyValue $Context.TenantId
             $AppSettings | Add-Member -NotePropertyName 'AppName' -NotePropertyValue $appName
             # 5) Create or retrieve the certificate
-            $CertDetails = Initialize-TkAppAuthCertificate `
-                -AppName $AppSettings.AppName `
-                -Thumbprint $CertThumbprint `
-                -Subject "CN=$($AppSettings.AppName)" `
-                -KeyExportPolicy $KeyExportPolicy `
-                -ErrorAction Stop
+            $AppAuthCertificateParams = @{
+                AppName         = $AppSettings.AppName
+                Thumbprint      = $CertThumbprint
+                Subject         = "CN=$($AppSettings.AppName)"
+                KeyExportPolicy = $KeyExportPolicy
+                ErrorAction     = 'Stop'
+            }
+            $CertDetails = Initialize-TkAppAuthCertificate @AppAuthCertificateParams
             # Build a “proposed” object so the user sees what’s about to happen
             $proposedObject = [PSCustomObject]@{
                 ProposedAppName           = $AppSettings.AppName
@@ -182,60 +187,61 @@ function Publish-TkMemPolicyManagerApp {
             }
             Write-AuditLog 'Proposed creation of a new MEM Policy Manager App with the following properties:'
             Write-AuditLog "$($proposedObject | Format-List)"
-            # The big If: confirm with ShouldProcess
-            $Notes = @"
-Certificate Thumbprint: $($CertDetails.CertThumbprint)
-Certificate Expires: $($CertDetails.CertExpires)
-Tenant ID: $($Context.TenantId)
-Graph App Permissions: $($permissions -join ', ')
-Read-Write Permissions: $(if ($ReadWrite) { 'ReadWrite' } else { 'Read-Only' })
-Authorized Client IP: $((Invoke-RestMethod ifconfig.me/ip))
-Client Hostname: $env:COMPUTERNAME
-"@
+            $notesHash = [ordered]@{
+                'Certificate Thumbprint' = $($CertDetails.CertThumbprint)
+                'Certificate Expires'    = $($CertDetails.CertExpires)
+                'GraphAppPermissions'    = $($permissions -join ', ')
+                'Read-Write Permissions' = $(if ($ReadWrite) { 'ReadWrite' } else { 'Read-Only' })
+                'AuthorizedClient IP'    = $((Invoke-RestMethod ifconfig.me/ip))
+                'ClientOrUserHostname'   = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { $env:USERNAME }
+            }
+            # Convert that hashtable to a JSON string:
+            $Notes = $notesHash | ConvertTo-Json #-Compress
             if ($PSCmdlet.ShouldProcess("MemPolicyManager App '$($AppSettings.AppName)'",
                     'Create and configure a new MEM Policy Manager app in Azure AD?')) {
                 # 6) Register the application (with the cert)
-                $appRegistration = New-TkAppRegistration `
-                    -DisplayName $AppSettings.AppName `
-                    -CertThumbprint $CertDetails.CertThumbprint `
-                    -RequiredResourceAccessList $AppSettings.RequiredResourceAccessList `
-                    -SignInAudience 'AzureADMyOrg' `
-                    -Notes $Notes `
-                    -ErrorAction Stop
+                $AppRegistrationParams = @{
+                    DisplayName                = $AppSettings.AppName
+                    CertThumbprint             = $CertDetails.CertThumbprint
+                    RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
+                    SignInAudience             = 'AzureADMyOrg'
+                    Notes                      = $Notes
+                    ErrorAction                = 'Stop'
+                }
+                $appRegistration = New-TkAppRegistration @AppRegistrationParams
                 # 7) Create the Service Principal & grant the permissions
-                $ConsentUrl = Initialize-TkAppSpRegistration `
-                    -AppRegistration $appRegistration `
-                    -Context $Context `
-                    -RequiredResourceAccessList $AppSettings.RequiredResourceAccessList `
-                    -Scopes $permissionsObject `
-                    -AuthMethod 'Certificate' `
-                    -CertThumbprint $CertDetails.CertThumbprint `
-                    -ErrorAction Stop
+                $AppSpRegistrationParams = @{
+                    AppRegistration            = $appRegistration
+                    Context                    = $Context
+                    RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
+                    Scopes                     = $permissionsObject
+                    AuthMethod                 = 'Certificate'
+                    CertThumbprint             = $CertDetails.CertThumbprint
+                    ErrorAction                = 'Stop'
+                }
+                $ConsentUrl = Initialize-TkAppSpRegistration @AppSpRegistrationParams
                 [void](Read-Host 'Provide admin consent now, or copy the url and provide admin consent later. Press Enter to continue.')
                 # 8) Build a final PSCustomObject to store in the secret vault
-                $output = [PSCustomObject]@{
+                $TkMemPolicyManagerAppParams = @{
                     AppId          = $appRegistration.AppId
                     AppName        = "CN=$($AppSettings.AppName)"
                     CertThumbprint = $CertDetails.CertThumbprint
-                    ClientId       = $appRegistration.AppId
+                    ObjectId       = $appRegistration.Id
                     ConsentUrl     = $ConsentUrl
                     PermissionSet  = if ($ReadWrite) { 'ReadWrite' } else { 'ReadOnly' }
                     Permissions    = $permissions
                     TenantId       = $Context.TenantId
                 }
-                $auditObj = [TkMemPolicyManagerAppParams]::new(
-                    $output.AppId,
-                    $output.AppName,
-                    $output.CertThumbprint,
-                    $output.ClientId,
-                    $output.ConsentUrl,
-                    $output.PermissionSet,
-                    $output.Permissions,
-                    $output.TenantId
-                )
+                [TkMemPolicyManagerAppParams]$auditObj = New-TkMemPolicyManagerAppParams @TkMemPolicyManagerAppParams
                 # 9) Store as JSON secret
-                $secretName = "CN=$($AppSettings.AppName)"
-                $savedName = Set-TkJsonSecret -Name $secretName -InputObject $output -VaultName $VaultName -Overwrite:$OverwriteVaultSecret
+                $JsonSecretParams = @{
+                    Name        = "CN=$($AppSettings.AppName)"
+                    InputObject = $auditObj
+                    VaultName   = $VaultName
+                    Overwrite   = $OverwriteVaultSecret
+                    ErrorAction = 'Stop'
+                }
+                $savedName = Set-TkJsonSecret @JsonSecretParams
                 Write-AuditLog "Secret '$savedName' saved to vault '$VaultName'."
                 # Return the final object (param-splat or normal)
                 if ($ReturnParamSplat) {
