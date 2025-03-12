@@ -381,17 +381,17 @@ function Publish-TkEmailApp {
                             -ErrorAction Stop | Out-Null
                         # Build an output object similar to "new" scenario
                         $EmailAppParams = @{
-                            AppId                  = $appRegistration.AppId
-                            Id                     = $appRegistration.Id
+                            AppId                  = $existingApp.AppId
+                            Id                     = $existingApp.Id
                             AppName                = "CN=$updatedString"
-                            AppRestrictedSendGroup = $MailEnabledSendingGroup
+                            AppRestrictedSendGroup = $notesObject.RestrictedToGroup
                             CertExpires            = $CertDetails.CertExpires
                             CertThumbprint         = $CertDetails.CertThumbprint
                             ConsentUrl             = $null
                             DefaultDomain          = ($notesObject.GraphEmailAppFor.Split('@')[1])
                             SendAsUser             = ($notesObject.GraphEmailAppFor.Split('@')[0])
                             SendAsUserEmail        = $notesObject.GraphEmailAppFor
-                            TenantID               = $output.TenantID
+                            TenantID               = $Context.TenantID
                         }
                         [TkEmailAppParams]$graphEmailApp = New-TkEmailAppParams @EmailAppParams
                         # Store updated info in the vault
