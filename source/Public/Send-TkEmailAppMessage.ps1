@@ -187,12 +187,14 @@ function Send-TkEmailAppMessage {
         # If manual parameter set:
         if ($PSCmdlet.ParameterSetName -eq 'Manual') {
             $cert = Get-ChildItem -Path Cert:\CurrentUser\My | Where-Object { $_.Thumbprint -eq $CertThumbprint } -ErrorAction Stop
+            # TODO Confirm this object is not needed elsewhere
             $GraphEmailApp = @{
                 AppId          = $AppId
                 CertThumbprint = $CertThumbprint
                 TenantID       = $TenantId
                 CertExpires    = $cert.NotAfter
             }
+            $Tenant = $TenantId
         }
         elseif ($PSCmdlet.ParameterSetName -eq 'Vault') {
             # If a GraphEmailApp object was not passed in, attempt to retrieve it from the local machine
