@@ -1,54 +1,47 @@
 <#
     .SYNOPSIS
-        Deploys a new Microsoft Graph Email app and associates it with a certificate for app-only authentication.
+        Publishes a new or existing Graph Email App with specified configurations.
     .DESCRIPTION
-        This cmdlet deploys a new Microsoft Graph Email app and associates it with a certificate for
-        app-only authentication. It requires an AppPrefix for the app, an optional CertThumbprint, an
-        AuthorizedSenderUserName, and a MailEnabledSendingGroup. Additionally, you can specify a
-        KeyExportPolicy for the certificate, control how secrets are stored via VaultName and OverwriteVaultSecret,
-        and optionally return a parameter splat instead of a PSCustomObject.
+        The Publish-TkEmailApp function creates or configures a Graph Email App in Azure AD. It supports two scenarios:
+        1. Creating a new app with specified parameters.
+        2. Using an existing app and attaching a certificate to it.
     .PARAMETER AppPrefix
-        A unique prefix for the Graph Email App to initialize. Ensure it is used consistently for
-        grouping purposes (2-4 alphanumeric characters).
+        The prefix used to initialize the Graph Email App. Must be 2-4 characters, letters, and numbers only. Default is 'Gtk'.
     .PARAMETER AuthorizedSenderUserName
-        The username of the authorized sender.
+        The username of the authorized sender. Must be a valid email address.
     .PARAMETER MailEnabledSendingGroup
-        The mail-enabled group to which the sender belongs. This will be used to assign
-        app policy restrictions.
+        The mail-enabled security group. Must be a valid email address.
+    .PARAMETER ExistingAppObjectId
+        The AppId of the existing App Registration to which you want to attach a certificate. Must be a valid GUID.
+    .PARAMETER CertPrefix
+        Prefix to add to the certificate subject for the existing app.
     .PARAMETER CertThumbprint
-        An optional parameter indicating the thumbprint of the certificate to be retrieved. If not
-        specified, a self-signed certificate will be generated.
+        The thumbprint of the certificate to be retrieved. Must be a valid 40-character hexadecimal string.
     .PARAMETER KeyExportPolicy
-        Specifies the key export policy for the newly created certificate. Valid values are
-        'Exportable' or 'NonExportable'. Defaults to 'NonExportable'.
+        Key export policy for the certificate. Valid values are 'Exportable' and 'NonExportable'. Default is 'NonExportable'.
     .PARAMETER VaultName
-        If specified, the name of the vault to store the app's credentials. Otherwise,
-        defaults to 'GraphEmailAppLocalStore'.
+        If specified, use a custom vault name. Otherwise, use the default 'GraphEmailAppLocalStore'.
     .PARAMETER OverwriteVaultSecret
-        If specified, the function overwrites an existing secret in the vault if it
-        already exists.
+        If specified, overwrite the vault secret if it already exists.
     .PARAMETER ReturnParamSplat
-        If specified, returns the parameter splat for use in other functions instead
-        of the PSCustomObject.
+        If specified, return the parameter splat for use in other functions.
     .EXAMPLE
-        PS C:\> Publish-TkEmailApp -AppPrefix "ABC" -AuthorizedSenderUserName "jdoe@example.com" -MailEnabledSendingGroup "GraphAPIMailGroup@example.com" -CertThumbprint "AABBCCDDEEFF11223344556677889900"
-    .INPUTS
-        None
-    .OUTPUTS
-        By default, returns a PSCustomObject containing details such as AppId, CertThumbprint,
-        TenantID, and CertExpires. If -ReturnParamSplat is specified, returns the parameter
-        splat instead.
-    .NOTES
-        This cmdlet requires that the user running the cmdlet have the necessary permissions to
-        create the app and connect to Exchange Online. In addition, a mail-enabled security group
-        must already exist in Exchange Online for the MailEnabledSendingGroup parameter.
-        Permissions required:
-            'Application.ReadWrite.All',
-            'DelegatedPermissionGrant.ReadWrite.All',
-            'Directory.ReadWrite.All',
-            'RoleManagement.ReadWrite.Directory'
-#>
+        Publish-TkEmailApp -AppPrefix 'Gtk' -AuthorizedSenderUserName 'user@example.com' -MailEnabledSendingGroup 'group@example.com'
 
+        Creates a new Graph Email App with the specified parameters.
+    .EXAMPLE
+        Publish-TkEmailApp -ExistingAppObjectId '12345678-1234-1234-1234-1234567890ab' -CertPrefix 'Cert'
+
+    Uses an existing app and attaches a certificate with the specified prefix.
+    .NOTES
+        This cmdlet requires that the user running the cmdlet have the necessary permissions to create the app and connect to Exchange Online.
+        Permissions required:
+        - 'Application.ReadWrite.All'
+        - 'DelegatedPermissionGrant.ReadWrite.All'
+        - 'Directory.ReadWrite.All'
+        - 'RoleManagement.ReadWrite.Directory'
+
+#>
 function Publish-TkEmailApp {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName = 'CreateNewApp')]
     param(
@@ -144,6 +137,16 @@ function Publish-TkEmailApp {
         $ReturnParamSplat
     )
     begin {
+        <#
+            This cmdlet requires that the user running the cmdlet have the necessary permissions to
+            create the app and connect to Exchange Online. In addition, a mail-enabled security group
+            must already exist in Exchange Online for the MailEnabledSendingGroup parameter.
+            Permissions required:
+                'Application.ReadWrite.All',
+                'DelegatedPermissionGrant.ReadWrite.All',
+                'Directory.ReadWrite.All',
+                'RoleManagement.ReadWrite.Directory'
+        #>
         if (-not $script:LogString) {
             Write-AuditLog -Start
         }
@@ -168,6 +171,7 @@ function Publish-TkEmailApp {
                 'DelegatedPermissionGrant.ReadWrite.All',
                 'Directory.ReadWrite.All'
             )
+
         }
         catch {
             throw
@@ -185,7 +189,10 @@ function Publish-TkEmailApp {
                     -ExchangeOnline `
                     -GraphAuthScopes $scopesNeeded
                 # 3) Grab MgContext for tenant info
-                $Context = Get-MgContext -ErrorAction Stop
+                $Context = Get-MgContext
+                if (!$Context) {
+                    throw 'Could not retrieve the context for the tenant.'
+                }
                 # 1) Validate the user (AuthorizedSenderUserName) is in tenant
                 $user = Get-MgUser -Filter "Mail eq '$AuthorizedSenderUserName'"
                 if (-not $user) {
@@ -198,6 +205,14 @@ function Publish-TkEmailApp {
                     -Prefix $AppPrefix `
                     -ScenarioName 'AuditGraphEmail' `
                     -UserId $AuthorizedSenderUserName
+                # Verify if the secret already exists in the vault
+                $existingSecret = Get-TkExistingSecret `
+                    -AppName $appName `
+                    -VaultName $VaultName `
+                    -ErrorAction SilentlyContinue
+                if ($ExistingSecret -and -not $OverwriteVaultSecret) {
+                    throw "Secret '$AppName' already exists in vault '$VaultName'. Use the -OverwriteVaultSecret switch to overwrite it."
+                }
                 # Add relevant properties
                 $AppSettings | Add-Member -NotePropertyName 'User' -NotePropertyValue $user
                 $AppSettings | Add-Member -NotePropertyName 'AppName' -NotePropertyValue $appName
@@ -315,7 +330,10 @@ function Publish-TkEmailApp {
                 Connect-TkMsService `
                     -MgGraph `
                     -GraphAuthScopes $scopesNeeded
-                $Context = Get-MgContext -ErrorAction Stop
+                $Context = Get-MgContext
+                if (!$Context) {
+                    throw 'Could not retrieve the context for the tenant.'
+                }
                 $ClientCertPrefix = "$CertPrefix"
                 # Retrieve the existing app registration by AppId
                 Write-AuditLog "Looking up existing app with ObjectId: $ExistingAppObjectId"
