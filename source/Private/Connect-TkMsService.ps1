@@ -74,7 +74,7 @@ function Connect-TkMsService {
                         Remove-MgContext -ErrorAction SilentlyContinue
                         Write-AuditLog 'Creating a new Microsoft Graph session.'
                         Connect-MgGraph -Scopes $scopesNeeded `
-                            -ErrorAction Stop -Confirm
+                            -ErrorAction Stop
                         Write-AuditLog 'Connected to Microsoft Graph.'
                     }
                 }
@@ -82,7 +82,7 @@ function Connect-TkMsService {
                     # No valid session, so just connect
                     Write-AuditLog 'No valid Microsoft Graph session found. Connecting...'
                     Connect-MgGraph -Scopes $scopesNeeded `
-                        -ErrorAction Stop -Confirm
+                        -ErrorAction Stop
                     Write-AuditLog 'Connected to Microsoft Graph.'
                 }
             }
