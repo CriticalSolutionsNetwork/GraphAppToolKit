@@ -1,5 +1,5 @@
 function Connect-TkMsService {
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     param (
         [Parameter(
             HelpMessage = 'Connect to Microsoft Graph.'
