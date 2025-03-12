@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed formatting.
+- Manual app call for sending email.
+- Confirm to high for connect function.
 
 ## [0.1.2] - 2025-03-11
 
