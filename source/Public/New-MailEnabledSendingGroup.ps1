@@ -77,6 +77,7 @@ function New-MailEnabledSendingGroup {
         Write-AuditLog -BeginFunction
     }
     try {
+        # TODO Add confirmation prompt
         Connect-TkMsService -ExchangeOnline
         if (-not $Alias) {
             $Alias = $Name
