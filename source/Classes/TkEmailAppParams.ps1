@@ -2,6 +2,7 @@ class TkEmailAppParams {
     [string]$AppId
     [string]$Id
     [string]$AppName
+    [string]$CertificateSubject
     [string]$AppRestrictedSendGroup
     [string]$CertExpires
     [string]$CertThumbprint
@@ -15,6 +16,7 @@ class TkEmailAppParams {
         [string]$AppId,
         [string]$Id,
         [string]$AppName,
+        [string]$CertificateSubject,
         [string]$AppRestrictedSendGroup,
         [string]$CertExpires,
         [string]$CertThumbprint,
@@ -27,6 +29,7 @@ class TkEmailAppParams {
         $this.AppId                  = $AppId
         $this.Id                     = $Id
         $this.AppName                = $AppName
+        $this.ClientCertName         = $CertificateSubject
         $this.AppRestrictedSendGroup = $AppRestrictedSendGroup
         $this.CertExpires            = $CertExpires
         $this.CertThumbprint         = $CertThumbprint

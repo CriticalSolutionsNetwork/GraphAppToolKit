@@ -37,12 +37,15 @@
     Uses an existing app and attaches a certificate with the specified prefix.
     .NOTES
         This cmdlet requires that the user running the cmdlet have the necessary permissions to create the app and connect to Exchange Online.
-        Permissions required:
+        Permissions required for app registration:
         - 'Application.ReadWrite.All'
         - 'DelegatedPermissionGrant.ReadWrite.All'
         - 'Directory.ReadWrite.All'
         - 'RoleManagement.ReadWrite.Directory'
 
+        Permissions granted to the app:
+        - 'Mail.Send' (Application) - Send mail as any user
+        Exchange application policy restricts send to a mail enabled security group
 #>
 function Publish-TkEmailApp {
     [CmdletBinding(ConfirmImpact = 'High', DefaultParameterSetName = 'CreateNewApp')]
@@ -228,18 +231,18 @@ function Publish-TkEmailApp {
                 $AppSettings | Add-Member -NotePropertyName 'AppName' -NotePropertyValue $appName
                 if ($CertPrefix) {
                     $updatedString = $appName -replace '(GraphToolKit-)[A-Za-z0-9]{2,4}(?=-)', "`$1$CertPrefix"
-                    $CertName = "CN=$updatedString"
+                    $CertificateSubject = "CN=$updatedString"
                     $ClientCertPrefix = "$certPrefix"
                 }
                 else {
-                    $CertName = "CN=$appName"
+                    $CertificateSubject = "CN=$appName"
                     $ClientCertPrefix = "$AppPrefix"
                 }
                 # 3) Create or retrieve the certificate
                 $AppAuthCertificateParams = @{
                     AppName         = $AppSettings.AppName
                     Thumbprint      = $CertThumbprint
-                    Subject         = $CertName
+                    Subject         = $CertificateSubject
                     KeyExportPolicy = $KeyExportPolicy
                     ErrorAction     = 'Stop'
                 }
@@ -247,6 +250,7 @@ function Publish-TkEmailApp {
                 # 4) Show the proposed object
                 $proposedObject = [PSCustomObject]@{
                     ProposedAppName                 = $AppSettings.AppName
+                    ProposedCertificateSubject      = $CertificateSubject
                     CertificateThumbprintUsed       = $CertDetails.CertThumbprint
                     CertExpires                     = $CertDetails.CertExpires
                     UserPrincipalName               = $user.UserPrincipalName
@@ -301,7 +305,8 @@ function Publish-TkEmailApp {
                     $EmailAppParams = @{
                         AppId                  = $appRegistration.AppId
                         Id                     = $appRegistration.Id
-                        AppName                = "CN=$($AppSettings.AppName)"
+                        AppName                = "$($AppSettings.AppName)"
+                        CertificateSubject     = $CertificateSubject
                         AppRestrictedSendGroup = $MailEnabledSendingGroup
                         CertExpires            = $CertDetails.CertExpires
                         CertThumbprint         = $CertDetails.CertThumbprint

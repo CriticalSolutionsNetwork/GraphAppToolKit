@@ -9,6 +9,8 @@
     The unique identifier for the email application instance.
     .PARAMETER AppName
     The name of the email application being initialized.
+    .PARAMETER ClientCertName
+    The name of the client certificate used by the email application.
     .PARAMETER AppRestrictedSendGroup
     The group that is restricted from sending emails within the application.
     .PARAMETER CertExpires
@@ -38,6 +40,7 @@ function Initialize-TkEmailAppParamsObject {
         [string]$AppId,
         [string]$Id,
         [string]$AppName,
+        [string]$CertificateSubject,
         [string]$AppRestrictedSendGroup,
         [string]$CertExpires,
         [string]$CertThumbprint,
@@ -51,6 +54,7 @@ function Initialize-TkEmailAppParamsObject {
         $AppId,
         $Id,
         $AppName,
+        $CertificateSubject,
         $AppRestrictedSendGroup,
         $CertExpires,
         $CertThumbprint,
