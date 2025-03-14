@@ -212,7 +212,7 @@ function Send-TkEmailAppMessage {
                 try {
                     # Step 7:
                     # Define the application Name and Encrypted File Paths.
-                    $Auth = Get-Secret -Name "$AppName" -Vault $VaultName -AsPlainText -ErrorAction Stop
+                    $Auth = Get-Secret -Name "CN=$AppName" -Vault $VaultName -AsPlainText -ErrorAction Stop
                     $authObj = $Auth | ConvertFrom-Json
                     $GraphEmailApp = $authObj
                     $AppId = $GraphEmailApp.AppId

@@ -144,7 +144,7 @@ function Connect-TkMsService {
                     Write-AuditLog 'An active Exchange Online session is detected.'
                     Write-AuditLog "Tenant: `n$($ExoOrg.DisplayName)`n"
                     $shouldProcessTarget = 'ExchangeOnline'
-                    $shouldProcessOperation = "Use existing session for Org: $($ExoOrg.DisplayName) OnMicrosoftId: $($ExoOrg.Identity)"
+                    $shouldProcessOperation = "Use existing session for Org: $($ExoOrg.DisplayName) OnMicrosoftId: $($ExoOrg.Name )"
                     if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
                         Write-AuditLog 'Using existing Exchange Online session.'
                     }

@@ -38,7 +38,7 @@ function Initialize-TkAppName {
             HelpMessage='Optional scenario name (e.g. AuditGraphEmail, MemPolicy, etc.).'
         )]
         [string]
-        $ScenarioName = "GraphApp",
+        $ScenarioName = "TkEmailApp",
         [Parameter(
             Mandatory=$false,
             HelpMessage='Optional user email to append "As-[username]" suffix.'
@@ -72,7 +72,7 @@ function Initialize-TkAppName {
             else {
                 $domainSuffix = $env:USERDNSDOMAIN
             }
-            $appName = "GraphToolKit-$Prefix"
+            $appName = "GraphToolKit-$Prefix-$ScenarioName"
             Write-AuditLog "Returning app name: $appName (Prefix: $Prefix, Scenario: $ScenarioName, User Suffix: $userSuffix)"
             $appName += "-$domainSuffix"
             $appName += "$userSuffix"

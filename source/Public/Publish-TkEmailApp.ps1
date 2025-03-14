@@ -214,7 +214,6 @@ function Publish-TkEmailApp {
                     -GraphPermissions 'Mail.Send'
                 $appName = Initialize-TkAppName `
                     -Prefix $AppPrefix `
-                    -ScenarioName 'AuditGraphEmail' `
                     -UserId $AuthorizedSenderUserName `
                     -DoNotUseDomainSuffix:$DoNotUseDomainSuffix `
                     -ErrorAction Stop
