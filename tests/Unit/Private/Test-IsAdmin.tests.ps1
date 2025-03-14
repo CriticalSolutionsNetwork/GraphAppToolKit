@@ -8,18 +8,37 @@ $ProjectName = ((Get-ChildItem -Path $ProjectPath\*\*.psd1).Where{
 Import-Module $ProjectName
 
 InModuleScope $ProjectName {
-    Describe Get-PrivateFunction {
-        Context 'Default' {
-            BeforeEach {
-                $return = Get-PrivateFunction -PrivateData 'string'
+    Describe "Test-IsAdmin" {
+        Context "When the user is an administrator" {
+            It "Should return True" {
+                # Mock the WindowsPrincipal and WindowsIdentity classes
+                Mock -CommandName 'Security.Principal.WindowsPrincipal' -MockWith {
+                    return @{
+                        IsInRole = { param($role) return $role -eq [Security.Principal.WindowsBuiltinRole]::Administrator }
+                    }
+                }
+                Mock -CommandName 'Security.Principal.WindowsIdentity::GetCurrent' -MockWith {
+                    return $null
+                }
+                # Call the function and assert the result
+                $result = Test-IsAdmin
+                $result | Should -Be $true
             }
-
-            It 'Returns a single object' {
-                ($return | Measure-Object).Count | Should -Be 1
-            }
-
-            It 'Returns a string based on the parameter PrivateData' {
-                $return | Should -Be 'string'
+        }
+        Context "When the user is not an administrator" {
+            It "Should return False" {
+                # Mock the WindowsPrincipal and WindowsIdentity classes
+                Mock -CommandName 'Security.Principal.WindowsPrincipal' -MockWith {
+                    return @{
+                        IsInRole = { param($role) return $false }
+                    }
+                }
+                Mock -CommandName 'Security.Principal.WindowsIdentity::GetCurrent' -MockWith {
+                    return $null
+                }
+                # Call the function and assert the result
+                $result = Test-IsAdmin
+                $result | Should -Be $false
             }
         }
     }
