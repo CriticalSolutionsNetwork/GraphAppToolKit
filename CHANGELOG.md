@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated documentation across the module (README.md, help XML files, and about_GraphAppToolkit.help.txt).
 - Enhanced logging in private functions for improved auditability.
 - Switch parameter for removing domain suffix from the app name.
+- Certificate subject to param splat export.
+- Permissions to comment based help.
 
 ### Fixed
 
@@ -23,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manual app call for sending email.
 - Confirm to high for connect function.
 - Corrected parameter block formatting and alignment issues in multiple cmdlets.
+- Fixed Connect function ShouldProcess output.
 
 ## [0.1.2] - 2025-03-11
 
