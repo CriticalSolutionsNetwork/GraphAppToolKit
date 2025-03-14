@@ -39,9 +39,8 @@
         - The caller must have sufficient privileges to create or modify distribution groups.
         - DefaultParameterSetName = 'CustomDomain'.
 #>
-
 function New-MailEnabledSendingGroup {
-    [CmdletBinding(DefaultParameterSetName = 'CustomDomain')]
+    [CmdletBinding(SupportsShouldProcess = $true , DefaultParameterSetName = 'CustomDomain')]
     param (
         [Parameter(
             Mandatory = $true,
@@ -103,9 +102,13 @@ function New-MailEnabledSendingGroup {
             Type               = 'security'
         }
         Write-AuditLog -Message "Creating distribution group with parameters: `n$($groupParams | Out-String)"
-        $group = New-DistributionGroup @groupParams
-        Write-AuditLog -Message "Distribution group created:`n$($group | Out-String)"
-        return $group
+        $shouldProcessOperation = 'New-DistributionGroup'
+        $shouldProcessTarget = "'$PrimarySmtpAddress'"
+        if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
+            $group = New-DistributionGroup @groupParams
+            Write-AuditLog -Message "Distribution group created:`n$($group | Out-String)"
+            return $group
+        }
     }
     catch {
         throw

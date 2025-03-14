@@ -1,3 +1,31 @@
+<#
+    .SYNOPSIS
+    Connects to Microsoft Graph and/or Exchange Online services.
+    .DESCRIPTION
+    The Connect-TkMsService function establishes a connection to Microsoft Graph and/or Exchange Online services.
+    It checks for existing sessions and reuses them if valid, otherwise, it creates new sessions.
+    The function supports logging and provides detailed information about the connection process.
+    .PARAMETER MgGraph
+    Switch parameter to indicate if a connection to Microsoft Graph should be established.
+    .PARAMETER GraphAuthScopes
+    Array of strings specifying the scopes required for Microsoft Graph authentication.
+    .PARAMETER ExchangeOnline
+    Switch parameter to indicate if a connection to Exchange Online should be established.
+    .EXAMPLE
+    Connect-TkMsService -MgGraph -GraphAuthScopes @('User.Read', 'Mail.Read')
+
+    This example connects to Microsoft Graph with the specified scopes.
+    .EXAMPLE
+    Connect-TkMsService -ExchangeOnline
+
+    This example connects to Exchange Online.
+    .EXAMPLE
+    Connect-TkMsService -MgGraph -GraphAuthScopes @('User.Read', 'Mail.Read') -ExchangeOnline
+
+    This example connects to both Microsoft Graph and Exchange Online.
+    .NOTES
+    This function requires the Microsoft.Graph and ExchangeOnlineManagement modules to be installed and imported.
+#>
 function Connect-TkMsService {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     param (
@@ -29,10 +57,9 @@ function Connect-TkMsService {
     # Section 1: Microsoft Graph
     #----------------------------------------------
     if ($MgGraph) {
-        if ($PSCmdlet.ShouldProcess(
-                'Microsoft Graph',
-                'Connecting with scopes: Application.ReadWrite.All, DelegatedPermissionGrant.ReadWrite.All, Directory.ReadWrite.All, RoleManagement.ReadWrite.Directory'
-            )) {
+        $shouldProcessTarget = 'Connecting with scopes: Application.ReadWrite.All, DelegatedPermissionGrant.ReadWrite.All, Directory.ReadWrite.All, RoleManagement.ReadWrite.Directory'
+        $shouldProcessOperation = 'Connect-MgGraph'
+        if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
             try {
                 # 1) Attempt to see if we have a valid Graph session
                 $graphIsValid = $false
@@ -65,8 +92,10 @@ function Connect-TkMsService {
                 }
                 # 2) If valid session, ask user if they want to reuse it
                 if ($graphIsValid) {
-                    $null = $useExisting = Read-Host 'Do you want to use the existing Microsoft Graph session? (Y/N)'
-                    if ($useExisting -match '^[Yy]') {
+                    $org = Get-MgOrganization -ErrorAction Stop
+                    $shouldProcessTarget = 'Microsoft Graph'
+                    $shouldProcessOperation = "Use existing session for Account: $($context.Account) Tenant: $($org.DisplayName) AuthType: $($context.AuthType)"
+                    if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
                         Write-AuditLog 'Using existing Microsoft Graph session.'
                     }
                     else {
@@ -96,10 +125,9 @@ function Connect-TkMsService {
     # Section 2: Exchange Online
     #----------------------------------------------
     if ($ExchangeOnline) {
-        if ($PSCmdlet.ShouldProcess(
-                'Exchange Online',
-                'Connecting to ExchangeOnline using modern authentication pop-up.'
-            )) {
+        $shouldProcessTarget = 'Connecting to Exchange Online using modern authentication pop-up.'
+        $shouldProcessOperation = 'Connect-ExchangeOnline'
+        if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
             try {
                 # 1) Attempt to see if we have a valid Exchange session
                 $exoIsValid = $false
@@ -114,9 +142,10 @@ function Connect-TkMsService {
                 # 2) If valid session, ask user if they want to reuse it
                 if ($exoIsValid) {
                     Write-AuditLog 'An active Exchange Online session is detected.'
-                    Write-AuditLog "Tenant: `n$Org`n"
-                    $null = $useExisting = Read-Host 'Do you want to use the existing Exchange Online session? (Y/N)'
-                    if ($useExisting -match '^[Yy]') {
+                    Write-AuditLog "Tenant: `n$($Org.DisplayName)`n"
+                    $shouldProcessTarget = 'ExchangeOnline'
+                    $shouldProcessOperation = "Use existing session for Org: $($Org.DisplayName) OnMicrosoftId: $($Org.Identity)"
+                    if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
                         Write-AuditLog 'Using existing Exchange Online session.'
                     }
                     else {

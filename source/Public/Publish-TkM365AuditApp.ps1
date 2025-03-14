@@ -9,7 +9,7 @@
         created application details are stored as a secret in the specified SecretManagement vault.
     .PARAMETER AppPrefix
         A short prefix (2-4 alphanumeric characters) used to build the app name. Defaults to "Gtk"
-        if not specified.
+        if not specified. Example app name: GraphToolKit-MSN-GraphApp-MyDomain-As-helpDesk
     .PARAMETER CertThumbprint
         The thumbprint of an existing certificate in the current user's certificate store. If not
         provided, a new self-signed certificate is created.
@@ -46,7 +46,7 @@
             'RoleManagement.ReadWrite.Directory'
 #>
 function Publish-TkM365AuditApp {
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    [CmdletBinding(ConfirmImpact = 'High')]
     param(
         [Parameter(
             Mandatory = $false,
@@ -139,12 +139,12 @@ function Publish-TkM365AuditApp {
             Write-AuditLog "Exchange Perms: $($exchange -join ', ')"
             $Context = Get-MgContext -ErrorAction Stop
             # Gather the resource access objects (GUIDs) for all these perms
-            $AppSettings = New-TkRequiredResourcePermissionObject `
+            $AppSettings = Initialize-TkRequiredResourcePermissionObject `
                 -GraphPermissions $graph `
                 -Scenario '365Audit' `
                 -ErrorAction Stop
             # Generate the app name
-            $appName = New-TkAppName `
+            $appName = Initialize-TkAppName `
                 -Prefix $AppPrefix `
                 -ScenarioName 'M365Audit' `
                 -ErrorAction Stop
@@ -183,82 +183,81 @@ function Publish-TkM365AuditApp {
             }
             # Convert that hashtable to a JSON string:
             $Notes = $notesHash | ConvertTo-Json #-Compress
-            if ($PSCmdlet.ShouldProcess($appName, 'Create and configure M365 Audit App in EntraAD')) {
-                Write-AuditLog 'Creating new EntraAD application with all resource permissions...'
-                $AppRegistrationParams = @{
-                    DisplayName                = $appName
-                    CertThumbprint             = $CertDetails.CertThumbprint
-                    RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
-                    SignInAudience             = 'AzureADMyOrg'
-                    Notes                      = $Notes
-                    ErrorAction                = 'Stop'
-                }
-                $appRegistration = New-TkAppRegistration @AppRegistrationParams
-                Write-AuditLog "App registered. Object ID = $($appRegistration.Id), ClientId = $($appRegistration.AppId)."
-                # Grant the oauth2 permissions to service principal
-                $AppSpRegistrationParams = @{
-                    AppRegistration            = $appRegistration
-                    Context                    = $Context
-                    RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
-                    Scopes                     = $permissionsObject
-                    AuthMethod                 = 'Certificate'
-                    CertThumbprint             = $CertDetails.CertThumbprint
-                    ErrorAction                = 'Stop'
-                }
-                $ConsentUrl = Initialize-TkAppSpRegistration @AppSpRegistrationParams
-                [void](Read-Host 'Provide admin consent now, or copy the url and provide admin consent later. Press Enter to continue.')
-                Write-AuditLog 'Appending Exchange Administrator role to the app.'
-                $exoAdminRole = Get-MgDirectoryRole -Filter "displayName eq 'Exchange Administrator'" -ErrorAction Stop
-                # Get the service principal object ID of the app
-                $sp = Get-MgServicePrincipal -Filter "appId eq '$($appRegistration.appid)'" -ErrorAction Stop
-                $spObjectId = $sp.Id
-                $body = @{
-                    '@odata.id' = "https://graph.microsoft.com/v1.0/directoryObjects/$spObjectId"
-                }
-                New-MgDirectoryRoleMemberByRef `
-                    -DirectoryRoleId $exoAdminRole.Id `
-                    -BodyParameter $body `
-                    -ErrorAction Stop
-                Write-AuditLog 'Appending Global Reader role to the app.'
-                $globalReaderRole = Get-MgDirectoryRole `
-                    -Filter "displayName eq 'Global Reader'" `
-                    -ErrorAction Stop
-                New-MgDirectoryRoleMemberByRef `
-                    -DirectoryRoleId $globalReaderRole.Id `
-                    -BodyParameter $body `
-                    -ErrorAction Stop
-                # Store final app info in the vault
-                $M365AuditAppParams = @{
-                    AppName               = "CN=$appName"
-                    AppId                 = $appRegistration.AppId
-                    ObjectId              = $appRegistration.Id
-                    TenantId              = $context.TenantId
-                    CertThumbprint        = $CertDetails.CertThumbprint
-                    CertExpires           = $CertDetails.CertExpires
-                    ConsentUrl            = $ConsentUrl
-                    MgGraphPermissions    = "$graph"
-                    SharePointPermissions = "$sharePoint"
-                    ExchangePermissions   = "$exchange"
-                }
-                [TkM365AuditAppParams]$m365AuditApp = New-TkM365AuditAppParams @M365AuditAppParams
-                # Save to vault
-                $JsonSecretParams = @{
-                    Name        = "CN=$appName"
-                    InputObject = $m365AuditApp
-                    VaultName   = $VaultName
-                    Overwrite   = $OverwriteVaultSecret
-                    ErrorAction = 'Stop'
-                }
-                $savedName = Set-TkJsonSecret @JsonSecretParams
-                Write-AuditLog "Secret '$savedName' saved to vault '$VaultName'."
-                # Return as either param splat or plain object
-                if ($ReturnParamSplat) {
-                    return $m365AuditApp | ConvertTo-ParameterSplat
-                }
-                else {
-                    return $m365AuditApp
-                }
+            Write-AuditLog 'Creating new EntraAD application with all resource permissions...'
+            $AppRegistrationParams = @{
+                DisplayName                = $appName
+                CertThumbprint             = $CertDetails.CertThumbprint
+                RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
+                SignInAudience             = 'AzureADMyOrg'
+                Notes                      = $Notes
+                ErrorAction                = 'Stop'
             }
+            $appRegistration = New-TkAppRegistration @AppRegistrationParams
+            Write-AuditLog "App registered. Object ID = $($appRegistration.Id), ClientId = $($appRegistration.AppId)."
+            # Grant the oauth2 permissions to service principal
+            $AppSpRegistrationParams = @{
+                AppRegistration            = $appRegistration
+                Context                    = $Context
+                RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
+                Scopes                     = $permissionsObject
+                AuthMethod                 = 'Certificate'
+                CertThumbprint             = $CertDetails.CertThumbprint
+                ErrorAction                = 'Stop'
+            }
+            $ConsentUrl = Initialize-TkAppSpRegistration @AppSpRegistrationParams
+            [void](Read-Host 'Provide admin consent now, or copy the url and provide admin consent later. Press Enter to continue.')
+            Write-AuditLog 'Appending Exchange Administrator role to the app.'
+            $exoAdminRole = Get-MgDirectoryRole -Filter "displayName eq 'Exchange Administrator'" -ErrorAction Stop
+            # Get the service principal object ID of the app
+            $sp = Get-MgServicePrincipal -Filter "appId eq '$($appRegistration.appid)'" -ErrorAction Stop
+            $spObjectId = $sp.Id
+            $body = @{
+                '@odata.id' = "https://graph.microsoft.com/v1.0/directoryObjects/$spObjectId"
+            }
+            New-MgDirectoryRoleMemberByRef `
+                -DirectoryRoleId $exoAdminRole.Id `
+                -BodyParameter $body `
+                -ErrorAction Stop
+            Write-AuditLog 'Appending Global Reader role to the app.'
+            $globalReaderRole = Get-MgDirectoryRole `
+                -Filter "displayName eq 'Global Reader'" `
+                -ErrorAction Stop
+            New-MgDirectoryRoleMemberByRef `
+                -DirectoryRoleId $globalReaderRole.Id `
+                -BodyParameter $body `
+                -ErrorAction Stop
+            # Store final app info in the vault
+            $M365AuditAppParams = @{
+                AppName               = "CN=$appName"
+                AppId                 = $appRegistration.AppId
+                ObjectId              = $appRegistration.Id
+                TenantId              = $context.TenantId
+                CertThumbprint        = $CertDetails.CertThumbprint
+                CertExpires           = $CertDetails.CertExpires
+                ConsentUrl            = $ConsentUrl
+                MgGraphPermissions    = "$graph"
+                SharePointPermissions = "$sharePoint"
+                ExchangePermissions   = "$exchange"
+            }
+            [TkM365AuditAppParams]$m365AuditApp = Initialize-TkM365AuditAppParamsObject @M365AuditAppParams
+            # Save to vault
+            $JsonSecretParams = @{
+                Name        = "CN=$appName"
+                InputObject = $m365AuditApp
+                VaultName   = $VaultName
+                Overwrite   = $OverwriteVaultSecret
+                ErrorAction = 'Stop'
+            }
+            $savedName = Set-TkJsonSecret @JsonSecretParams
+            Write-AuditLog "Secret '$savedName' saved to vault '$VaultName'."
+            # Return as either param splat or plain object
+            if ($ReturnParamSplat) {
+                return $m365AuditApp | ConvertTo-ParameterSplat
+            }
+            else {
+                return $m365AuditApp
+            }
+
         }
         catch {
             throw

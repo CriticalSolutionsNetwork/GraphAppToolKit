@@ -1,57 +1,42 @@
 <#
     .SYNOPSIS
-        Installs or updates required PowerShell modules, with support for stable or pre-release versions.
+    Initializes the environment by installing and importing specified PowerShell modules.
     .DESCRIPTION
-        The Initialize-TkModuleEnv function handles module installation and importing in a flexible manner.
-        It checks for PowerShellGet (and updates it if needed), adjusts the function limit if the Microsoft.Graph
-        module is included, and can install modules for either the CurrentUser or AllUsers scope. It supports
-        both stable (Public) and pre-release modules, and optionally imports specific modules by name.
-        Logging is handled via Write-AuditLog, and administrative privileges are required for certain operations
-        (e.g., installing modules for AllUsers).
+    The Initialize-TkModuleEnv function installs and imports specified PowerShell modules, either public or pre-release versions, based on the provided parameters. It also ensures that the PowerShellGet module is up-to-date and handles the installation scope, requiring elevation for 'AllUsers' scope. The function logs the installation and import process using Write-AuditLog.
     .PARAMETER PublicModuleNames
-        An array of stable module names to install when using the 'Public' parameter set.
+    An array of public module names to be installed.
     .PARAMETER PublicRequiredVersions
-        An array of required stable module versions corresponding to each name in PublicModuleNames.
+    An array of required versions corresponding to the public module names.
     .PARAMETER PrereleaseModuleNames
-        An array of pre-release module names to install when using the 'Prerelease' parameter set.
+    An array of pre-release module names to be installed.
     .PARAMETER PrereleaseRequiredVersions
-        An array of required pre-release module versions corresponding to each name in PrereleaseModuleNames.
+    An array of required versions corresponding to the pre-release module names.
     .PARAMETER Scope
-        Specifies whether to install the modules for the CurrentUser or AllUsers.
-        Accepts 'CurrentUser' or 'AllUsers'. Requires administrative privileges for 'AllUsers'.
+    The installation scope, either 'AllUsers' or 'CurrentUser'.
     .PARAMETER ImportModuleNames
-        An optional list of modules to selectively import after installation. If not specified, all installed modules
-        are imported.
+    An optional array of module names to be imported after installation.
     .EXAMPLE
-        Initialize-TkModuleEnv -PublicModuleNames "PsNmap", "Microsoft.Graph" -PublicRequiredVersions "1.3.1","1.23.0" -Scope AllUsers
-        Installs PsNmap and Microsoft.Graph in the AllUsers scope with the specified versions.
+    $params1 = @{
+        PublicModuleNames      = "PSnmap","Microsoft.Graph"
+        PublicRequiredVersions = "1.3.1","1.23.0"
+        ImportModuleNames      = "Microsoft.Graph.Authentication", "Microsoft.Graph.Identity.SignIns"
+        Scope                  = "CurrentUser"
+    }
+    Initialize-TkModuleEnv @params1
+    Installs and imports specific modules for Microsoft.Graph.
     .EXAMPLE
-        $params1 = @{
-            PublicModuleNames      = "PSnmap","Microsoft.Graph"
-            PublicRequiredVersions = "1.3.1","1.23.0"
-            ImportModuleNames      = "Microsoft.Graph.Authentication", "Microsoft.Graph.Identity.SignIns"
-            Scope                  = "CurrentUser"
-        }
-        Initialize-TkModuleEnv @params1
-        Installs and imports specific modules for Microsoft.Graph.
-    .EXAMPLE
-        $params2 = @{
-            PrereleaseModuleNames      = "Sampler", "Pester"
-            PrereleaseRequiredVersions = "2.1.5", "4.10.1"
-            Scope                      = "CurrentUser"
-        }
-        Initialize-TkModuleEnv @params2
-        Installs the pre-release versions of Sampler and Pester in the CurrentUser scope.
-    .INPUTS
-        None. You cannot pipe input into this function.
-    .OUTPUTS
-        None. This function does not return objects to the pipeline.
+    $params2 = @{
+        PrereleaseModuleNames      = "Sampler", "Pester"
+        PrereleaseRequiredVersions = "2.1.5", "4.10.1"
+        Scope                      = "CurrentUser"
+    }
+    Initialize-TkModuleEnv @params2
+    Installs the pre-release versions of Sampler and Pester in the CurrentUser scope.
     .NOTES
-        Author: DrIOSx
-        Requires: Write-AuditLog, Test-IsAdmin
-        - This function checks for and updates PowerShellGet if needed.
-        - It sets the function limit to 8192 if the Microsoft.Graph module is included and PowerShell is 5.1.
-        - If the user lacks administrative privileges but tries to install to AllUsers, it throws an error.
+    - If Microsoft.Graph is being installed, the function limit is raised to 8192 if it is less than that.
+    - The function checks and updates PowerShellGet if needed.
+    - The function validates the installation scope and requires elevation for 'AllUsers' scope.
+    - The function logs the installation and import process using Write-AuditLog.
 #>
 function Initialize-TkModuleEnv {
     [CmdletBinding(DefaultParameterSetName = 'Public')]
@@ -86,7 +71,11 @@ function Initialize-TkModuleEnv {
         [string[]]
         $ImportModuleNames = $null
     )
-    if (-not $script:LogString) { Write-AuditLog -Start }else { Write-AuditLog -BeginFunction }
+    if (-not $script:LogString) {
+        Write-AuditLog -Start
+    } else {
+        Write-AuditLog -BeginFunction
+    }
     Write-AuditLog '###########################################################'
     try {
         # If Microsoft.Graph is being installed, raise function limit if < 8192.

@@ -12,11 +12,18 @@ Deploys a new Microsoft Graph Email app and associates it with a certificate for
 
 ## SYNTAX
 
+### CreateNewApp (Default)
 ```
-Publish-TkEmailApp [-AppPrefix] <String> [-AuthorizedSenderUserName] <String>
- [-MailEnabledSendingGroup] <String> [[-CertThumbprint] <String>] [[-KeyExportPolicy] <String>]
- [[-VaultName] <String>] [-OverwriteVaultSecret] [-ReturnParamSplat] [-ProgressAction <ActionPreference>]
- [-WhatIf] [-Confirm] [<CommonParameters>]
+Publish-TkEmailApp [-AppPrefix <String>] -AuthorizedSenderUserName <String> -MailEnabledSendingGroup <String>
+ [-CertPrefix <String>] [-CertThumbprint <String>] [-KeyExportPolicy <String>] [-VaultName <String>]
+ [-OverwriteVaultSecret] [-ReturnParamSplat] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+```
+
+### UseExistingApp
+```
+Publish-TkEmailApp -ExistingAppObjectId <String> -CertPrefix <String> [-CertThumbprint <String>]
+ [-KeyExportPolicy <String>] [-VaultName <String>] [-OverwriteVaultSecret] [-ReturnParamSplat]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -44,11 +51,11 @@ grouping purposes (2-4 alphanumeric characters).
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: CreateNewApp
 Aliases:
 
-Required: True
-Position: 1
+Required: False
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -59,11 +66,11 @@ The username of the authorized sender.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: CreateNewApp
 Aliases:
 
 Required: True
-Position: 2
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -76,11 +83,53 @@ app policy restrictions.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: CreateNewApp
 Aliases:
 
 Required: True
-Position: 3
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ExistingAppObjectId
+The AppId of the existing App Registration to which you want to attach a certificate. Must be a valid GUID.
+
+```yaml
+Type: String
+Parameter Sets: UseExistingApp
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -CertPrefix
+Prefix to add to the certificate subject for the existing app.
+
+```yaml
+Type: String
+Parameter Sets: CreateNewApp
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+```yaml
+Type: String
+Parameter Sets: UseExistingApp
+Aliases:
+
+Required: True
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -97,7 +146,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 4
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -115,7 +164,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 5
+Position: Named
 Default value: NonExportable
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -132,7 +181,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 6
+Position: Named
 Default value: GraphEmailAppLocalStore
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -170,37 +219,6 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -WhatIf
-Shows what would happen if the cmdlet runs.
-The cmdlet is not run.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases: wi
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Confirm
-Prompts you for confirmation before running the cmdlet.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases: cf
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -ProgressAction
 {{ Fill ProgressAction Description }}
 
@@ -221,12 +239,8 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
-### None
 ## OUTPUTS
 
-### By default, returns a PSCustomObject containing details such as AppId, CertThumbprint,
-### TenantID, and CertExpires. If -ReturnParamSplat is specified, returns the parameter
-### splat instead.
 ## NOTES
 This cmdlet requires that the user running the cmdlet have the necessary permissions to
 create the app and connect to Exchange Online.

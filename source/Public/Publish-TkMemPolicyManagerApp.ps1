@@ -46,7 +46,7 @@
             'RoleManagement.ReadWrite.Directory'
 #>
 function Publish-TkMemPolicyManagerApp {
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    [CmdletBinding(ConfirmImpact = 'High')]
     param(
         [Parameter(
             Mandatory = $true,
@@ -157,10 +157,10 @@ function Publish-TkMemPolicyManagerApp {
             }
             Write-AuditLog "Using the following MEM permissions: $($permissions -join ', ')"
             # 2) Build a Graph context object that looks up these permission IDs
-            $AppSettings = New-TkRequiredResourcePermissionObject `
+            $AppSettings = Initialize-TkRequiredResourcePermissionObject `
                 -GraphPermissions $permissions
             # 3) Build an app name for scenario "MemPolicyManager"
-            $appName = New-TkAppName `
+            $appName = Initialize-TkAppName `
                 -Prefix $AppPrefix `
                 -ScenarioName 'MemPolicyManager' `
                 -ErrorAction Stop
@@ -197,62 +197,56 @@ function Publish-TkMemPolicyManagerApp {
             }
             # Convert that hashtable to a JSON string:
             $Notes = $notesHash | ConvertTo-Json #-Compress
-            if ($PSCmdlet.ShouldProcess("MemPolicyManager App '$($AppSettings.AppName)'",
-                    'Create and configure a new MEM Policy Manager app in Azure AD?')) {
-                # 6) Register the application (with the cert)
-                $AppRegistrationParams = @{
-                    DisplayName                = $AppSettings.AppName
-                    CertThumbprint             = $CertDetails.CertThumbprint
-                    RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
-                    SignInAudience             = 'AzureADMyOrg'
-                    Notes                      = $Notes
-                    ErrorAction                = 'Stop'
-                }
-                $appRegistration = New-TkAppRegistration @AppRegistrationParams
-                # 7) Create the Service Principal & grant the permissions
-                $AppSpRegistrationParams = @{
-                    AppRegistration            = $appRegistration
-                    Context                    = $Context
-                    RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
-                    Scopes                     = $permissionsObject
-                    AuthMethod                 = 'Certificate'
-                    CertThumbprint             = $CertDetails.CertThumbprint
-                    ErrorAction                = 'Stop'
-                }
-                $ConsentUrl = Initialize-TkAppSpRegistration @AppSpRegistrationParams
-                [void](Read-Host 'Provide admin consent now, or copy the url and provide admin consent later. Press Enter to continue.')
-                # 8) Build a final PSCustomObject to store in the secret vault
-                $TkMemPolicyManagerAppParams = @{
-                    AppId          = $appRegistration.AppId
-                    AppName        = "CN=$($AppSettings.AppName)"
-                    CertThumbprint = $CertDetails.CertThumbprint
-                    ObjectId       = $appRegistration.Id
-                    ConsentUrl     = $ConsentUrl
-                    PermissionSet  = if ($ReadWrite) { 'ReadWrite' } else { 'ReadOnly' }
-                    Permissions    = $permissions
-                    TenantId       = $Context.TenantId
-                }
-                [TkMemPolicyManagerAppParams]$auditObj = New-TkMemPolicyManagerAppParams @TkMemPolicyManagerAppParams
-                # 9) Store as JSON secret
-                $JsonSecretParams = @{
-                    Name        = "CN=$($AppSettings.AppName)"
-                    InputObject = $auditObj
-                    VaultName   = $VaultName
-                    Overwrite   = $OverwriteVaultSecret
-                    ErrorAction = 'Stop'
-                }
-                $savedName = Set-TkJsonSecret @JsonSecretParams
-                Write-AuditLog "Secret '$savedName' saved to vault '$VaultName'."
-                # Return the final object (param-splat or normal)
-                if ($ReturnParamSplat) {
-                    return $auditObj | ConvertTo-ParameterSplat
-                }
-                else {
-                    return $auditObj
-                }
+            # 6) Register the application (with the cert)
+            $AppRegistrationParams = @{
+                DisplayName                = $AppSettings.AppName
+                CertThumbprint             = $CertDetails.CertThumbprint
+                RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
+                SignInAudience             = 'AzureADMyOrg'
+                Notes                      = $Notes
+                ErrorAction                = 'Stop'
+            }
+            $appRegistration = New-TkAppRegistration @AppRegistrationParams
+            # 7) Create the Service Principal & grant the permissions
+            $AppSpRegistrationParams = @{
+                AppRegistration            = $appRegistration
+                Context                    = $Context
+                RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
+                Scopes                     = $permissionsObject
+                AuthMethod                 = 'Certificate'
+                CertThumbprint             = $CertDetails.CertThumbprint
+                ErrorAction                = 'Stop'
+            }
+            $ConsentUrl = Initialize-TkAppSpRegistration @AppSpRegistrationParams
+            [void](Read-Host 'Provide admin consent now, or copy the url and provide admin consent later. Press Enter to continue.')
+            # 8) Build a final PSCustomObject to store in the secret vault
+            $TkMemPolicyManagerAppParams = @{
+                AppId          = $appRegistration.AppId
+                AppName        = "CN=$($AppSettings.AppName)"
+                CertThumbprint = $CertDetails.CertThumbprint
+                ObjectId       = $appRegistration.Id
+                ConsentUrl     = $ConsentUrl
+                PermissionSet  = if ($ReadWrite) { 'ReadWrite' } else { 'ReadOnly' }
+                Permissions    = $permissions
+                TenantId       = $Context.TenantId
+            }
+            [TkMemPolicyManagerAppParams]$AppParamsObject = Initialize-TkMemPolicyManagerAppParamsObject @TkMemPolicyManagerAppParams
+            # 9) Store as JSON secret
+            $JsonSecretParams = @{
+                Name        = "CN=$($AppSettings.AppName)"
+                InputObject = $AppParamsObject
+                VaultName   = $VaultName
+                Overwrite   = $OverwriteVaultSecret
+                ErrorAction = 'Stop'
+            }
+            $savedName = Set-TkJsonSecret @JsonSecretParams
+            Write-AuditLog "Secret '$savedName' saved to vault '$VaultName'."
+            # Return the final object (param-splat or normal)
+            if ($ReturnParamSplat) {
+                return $AppParamsObject | ConvertTo-ParameterSplat
             }
             else {
-                Write-AuditLog 'User elected not to create or configure the MEM Policy Manager App. (ShouldProcess => false).'
+                return $AppParamsObject
             }
         }
         catch {
@@ -263,4 +257,3 @@ function Publish-TkMemPolicyManagerApp {
         Write-AuditLog -EndFunction
     }
 }
-
