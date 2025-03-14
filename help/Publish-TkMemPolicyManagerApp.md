@@ -14,7 +14,7 @@ Publishes a new MEM (Intune) Policy Manager App in Azure AD with read-only or re
 
 ```
 Publish-TkMemPolicyManagerApp [-AppPrefix] <String> [[-CertThumbprint] <String>] [[-KeyExportPolicy] <String>]
- [[-VaultName] <String>] [-OverwriteVaultSecret] [-ReadWrite] [-ReturnParamSplat]
+ [[-VaultName] <String>] [-OverwriteVaultSecret] [-ReadWrite] [-ReturnParamSplat] [-DoNotUseDomainSuffix]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -137,6 +137,21 @@ Accept wildcard characters: False
 ### -ReturnParamSplat
 If specified, returns a parameter splat string for use in other functions.
 Otherwise, returns a PSCustomObject containing the app details.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -DoNotUseDomainSuffix
+If specified, the function does not append the domain suffix to the app name.
 
 ```yaml
 Type: SwitchParameter

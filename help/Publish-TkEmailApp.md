@@ -16,14 +16,15 @@ Deploys a new Microsoft Graph Email app and associates it with a certificate for
 ```
 Publish-TkEmailApp [-AppPrefix <String>] -AuthorizedSenderUserName <String> -MailEnabledSendingGroup <String>
  [-CertPrefix <String>] [-CertThumbprint <String>] [-KeyExportPolicy <String>] [-VaultName <String>]
- [-OverwriteVaultSecret] [-ReturnParamSplat] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-OverwriteVaultSecret] [-ReturnParamSplat] [-DoNotUseDomainSuffix] [-ProgressAction <ActionPreference>]
+ [<CommonParameters>]
 ```
 
 ### UseExistingApp
 ```
 Publish-TkEmailApp -ExistingAppObjectId <String> -CertPrefix <String> [-CertThumbprint <String>]
  [-KeyExportPolicy <String>] [-VaultName <String>] [-OverwriteVaultSecret] [-ReturnParamSplat]
- [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-DoNotUseDomainSuffix] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -206,6 +207,21 @@ Accept wildcard characters: False
 ### -ReturnParamSplat
 If specified, returns the parameter splat for use in other functions instead
 of the PSCustomObject.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -DoNotUseDomainSuffix
+Switch to add session domain suffix to the app name.
 
 ```yaml
 Type: SwitchParameter

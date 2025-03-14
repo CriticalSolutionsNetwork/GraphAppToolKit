@@ -14,8 +14,8 @@ Publishes (creates) a new M365 Audit App registration in Entra ID (Azure AD) wit
 
 ```
 Publish-TkM365AuditApp [[-AppPrefix] <String>] [[-CertThumbprint] <String>] [[-KeyExportPolicy] <String>]
- [[-VaultName] <String>] [-OverwriteVaultSecret] [-ReturnParamSplat] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+ [[-VaultName] <String>] [-OverwriteVaultSecret] [-ReturnParamSplat] [-DoNotUseDomainSuffix]
+ [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -124,6 +124,21 @@ Accept wildcard characters: False
 ### -ReturnParamSplat
 If specified, returns a parameter splat string for use in other functions, instead of the
 default PSCustomObject containing the app details.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -DoNotUseDomainSuffix
+If specified, does not append the domain suffix to the app name.
 
 ```yaml
 Type: SwitchParameter
