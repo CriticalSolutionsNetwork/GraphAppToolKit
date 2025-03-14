@@ -41,11 +41,25 @@
         This function requires the Microsoft.Graph module for application creation and the user must have
         permissions in Azure AD to register and grant permissions to the application. After creation, admin
         consent may be needed to finalize the permission grants.
-        Permissions required:
+        Permissions required for app registration::
             'Application.ReadWrite.All',
             'DelegatedPermissionGrant.ReadWrite.All',
-            'Directory.ReadWrite.All',
-            'RoleManagement.ReadWrite.Directory'
+            'Directory.ReadWrite.All'
+
+        Permissions required for read-only access:
+
+            'DeviceManagementConfiguration.Read.All',
+            'DeviceManagementApps.Read.All',
+            'DeviceManagementManagedDevices.Read.All',
+            'Policy.Read.ConditionalAccess',
+            'Policy.Read.All'
+
+        Permissions required for read-write access:
+            'DeviceManagementConfiguration.ReadWrite.All',
+            'DeviceManagementApps.ReadWrite.All',
+            'DeviceManagementManagedDevices.ReadWrite.All',
+            'Policy.ReadWrite.ConditionalAccess',
+            'Policy.Read.All'
 #>
 function Publish-TkMemPolicyManagerApp {
     [CmdletBinding(ConfirmImpact = 'High')]

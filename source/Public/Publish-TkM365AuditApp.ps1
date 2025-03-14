@@ -41,11 +41,28 @@
         role assignment. The user must have sufficient privileges to create and manage applications
         in Azure AD, and to assign roles. After creation, admin consent may be required for the
         assigned permissions.
-        Permissions required:
+        Permissions required for app registration:
             'Application.ReadWrite.All',
             'DelegatedPermissionGrant.ReadWrite.All',
             'Directory.ReadWrite.All',
             'RoleManagement.ReadWrite.Directory'
+
+        Permissions granted to the app:
+        (Exchange Administrator and Global Reader Roles are also added to the service principal.)
+            'AppCatalog.ReadWrite.All',
+            'Channel.Delete.All',
+            'ChannelMember.ReadWrite.All',
+            'ChannelSettings.ReadWrite.All',
+            'Directory.Read.All',
+            'Group.ReadWrite.All',
+            'Organization.Read.All',
+            'Policy.Read.All',
+            'Domain.Read.All',
+            'TeamSettings.ReadWrite.All',
+            'User.Read.All',
+            'Sites.Read.All',
+            'Sites.FullControl.All',
+            'Exchange.ManageAsApp'
 #>
 function Publish-TkM365AuditApp {
     [CmdletBinding(ConfirmImpact = 'High')]
