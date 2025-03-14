@@ -31,16 +31,15 @@ Send-TkEmailAppMessage -AppId <String> -TenantId <String> -CertThumbprint <Strin
 The Send-TkEmailAppMessage function uses the Microsoft Graph API to send an email to a specified
 recipient.
 It supports two parameter sets:
-
 1.
-'Vault' (default): Provide an existing app name (AppName) whose credentials are stored in the local
-    secret vault (e.g., GraphEmailAppLocalStore).
-The function retrieves the AppId, TenantId, and
-    certificate thumbprint automatically.
+'Vault' (default): Provide an existing app name (AppName) whose credentials are stored in the
+    local secret vault (e.g., GraphEmailAppLocalStore).
+The function retrieves the AppId, TenantId,
+    and certificate thumbprint automatically.
 2.
 'Manual': Provide the AppId, TenantId, and certificate thumbprint yourself, bypassing the vault.
-In both cases, the function obtains an OAuth2 token (via MSAL.PS) using the specified certificate
-and uses the Microsoft Graph 'sendMail' endpoint to deliver the message.
+    In both cases, the function obtains an OAuth2 token (via MSAL.PS) using the specified certificate
+    and uses the Microsoft Graph 'sendMail' endpoint to deliver the message.
 
 ## EXAMPLES
 
@@ -48,32 +47,29 @@ and uses the Microsoft Graph 'sendMail' endpoint to deliver the message.
 ```
 # Using the 'Vault' parameter set
 Send-TkEmailAppMessage -AppName "GraphEmailApp" -To "recipient@example.com" -FromAddress "sender@example.com" `
-                    -Subject "Test Email" -EmailBody "This is a test email."
+    -Subject "Test Email" -EmailBody "This is a test email."
+Retrieves the app's credentials (AppId, TenantId, CertThumbprint) from the local vault under the
+secret name "GraphEmailApp" and sends an email.
 ```
-
-In this example, the function retrieves the app's credentials (AppId, TenantId, CertThumbprint) from the
-local vault (GraphEmailAppLocalStore) under the secret name "GraphEmailApp."
 
 ### EXAMPLE 2
 ```
 # Using the 'Manual' parameter set
 Send-TkEmailAppMessage -AppId "00000000-1111-2222-3333-444444444444" -TenantId "contoso.onmicrosoft.com" `
-                    -CertThumbprint "AABBCCDDEEFF11223344556677889900" -To "recipient@example.com" `
-                    -FromAddress "sender@example.com" -Subject "Manual Email" -EmailBody "Hello from Manual!"
+    -CertThumbprint "AABBCCDDEEFF11223344556677889900" -To "recipient@example.com" -FromAddress "sender@example.com" `
+    -Subject "Manual Email" -EmailBody "Hello from Manual!"
+Uses the provided AppId, TenantId, and CertThumbprint directly (no vault) to obtain a token and send an email.
 ```
-
-In this example, no vault entry is used.
-Instead, the function directly uses the provided AppId,
-TenantId, and CertThumbprint to obtain a token and send an email.
 
 ## PARAMETERS
 
 ### -AppName
 \[Vault Parameter Set Only\]
 The name of the pre-created Microsoft Graph Email App (stored in GraphEmailAppLocalStore).
-This parameter is used only if the 'Vault' parameter set is chosen.
-The function retrieves
-the AppId, TenantId, and certificate thumbprint from the vault entry.
+Used only
+if the 'Vault' parameter set is chosen.
+The function retrieves the AppId, TenantId, and certificate
+thumbprint from the vault entry.
 
 ```yaml
 Type: String
@@ -90,8 +86,8 @@ Accept wildcard characters: False
 ### -AppId
 \[Manual Parameter Set Only\]
 The Azure AD application (client) ID to use for sending the email.
-Must be used together with
-TenantId and CertThumbprint in the 'Manual' parameter set.
+Must be used together with TenantId
+and CertThumbprint in the 'Manual' parameter set.
 
 ```yaml
 Type: String
@@ -217,8 +213,9 @@ Accept wildcard characters: False
 ```
 
 ### -VaultName
-[Vault Parameter Set Only]
-The name of the vault to retrieve the GraphEmailApp object. Default is 'GraphEmailAppLocalStore'.
+\[Vault Parameter Set Only\]
+The name of the vault to retrieve the GraphEmailApp object.
+Default is 'GraphEmailAppLocalStore'.
 
 ```yaml
 Type: String
@@ -233,7 +230,8 @@ Accept wildcard characters: False
 ```
 
 ### -WhatIf
-Shows what would happen if the cmdlet runs. The cmdlet is not run.
+Shows what would happen if the cmdlet runs.
+The cmdlet is not run.
 
 ```yaml
 Type: SwitchParameter
@@ -286,10 +284,10 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## NOTES
 - This function requires the Microsoft.Graph, SecretManagement, SecretManagement.JustinGrote.CredMan,
-    and MSAL.PS modules to be installed and imported (handled automatically via Initialize-TkModuleEnv).
+    and MSAL.PS modules to be installed (handled automatically via Initialize-TkModuleEnv).
 - For the 'Vault' parameter set, the local vault secret must store JSON properties including AppId,
     TenantID, and CertThumbprint.
-- Refer to https://learn.microsoft.com/en-us/graph/outlook-send-mail for more details on sending mail
+- Refer to https://learn.microsoft.com/en-us/graph/outlook-send-mail for details on sending mail
     via Microsoft Graph.
 
 ## RELATED LINKS

@@ -42,6 +42,7 @@ the credentials in the default vault.
 A short prefix (2-4 alphanumeric characters) used to build the app name.
 Defaults to "Gtk"
 if not specified.
+Example app name: GraphToolKit-MSN-GraphApp-MyDomain-As-helpDesk
 
 ```yaml
 Type: String
@@ -185,11 +186,27 @@ The user must have sufficient privileges to create and manage applications
 in Azure AD, and to assign roles.
 After creation, admin consent may be required for the
 assigned permissions.
-
-Permissions required:
+Permissions required for app registration:
     'Application.ReadWrite.All',
     'DelegatedPermissionGrant.ReadWrite.All',
     'Directory.ReadWrite.All',
     'RoleManagement.ReadWrite.Directory'
+
+Permissions granted to the app:
+(Exchange Administrator and Global Reader Roles are also added to the service principal.)
+    'AppCatalog.ReadWrite.All',
+    'Channel.Delete.All',
+    'ChannelMember.ReadWrite.All',
+    'ChannelSettings.ReadWrite.All',
+    'Directory.Read.All',
+    'Group.ReadWrite.All',
+    'Organization.Read.All',
+    'Policy.Read.All',
+    'Domain.Read.All',
+    'TeamSettings.ReadWrite.All',
+    'User.Read.All',
+    'Sites.Read.All',
+    'Sites.FullControl.All',
+    'Exchange.ManageAsApp'
 
 ## RELATED LINKS

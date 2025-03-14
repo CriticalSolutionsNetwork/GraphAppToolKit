@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated docs for the module.
 - Release Candidate
+- Update wiki pages.
 
 ## [0.2.0-preview0001] - 2025-03-14
 
