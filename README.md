@@ -36,10 +36,10 @@ The following Private Functions support the module’s internal processes and ar
 - **Initialize-TkAppAuthCertificate**
 - **Initialize-TkAppSpRegistration**
 - **Initialize-TkModuleEnv**
-- **New-TkAppName**
+- **Initialize-TkAppName**
 - **New-TkAppRegistration**
 - **New-TkExchangeEmailAppPolicy**
-- **New-TkRequiredResourcePermissionObject**
+- **Initialize-TkRequiredResourcePermissionObject**
 - **Set-TkJsonSecret**
 - **Test-IsAdmin**
 - **Write-AuditLog**
@@ -138,9 +138,9 @@ Creates or retrieves a mail-enabled security group with a custom or default doma
 ### Syntax
 ```powershell
 
-New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -PrimarySmtpAddress <String> [<CommonParameters>]
+New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -PrimarySmtpAddress <String> [-WhatIf] [-Confirm] [<CommonParameters>]
 
-New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -DefaultDomain <String> [<CommonParameters>]
+New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -DefaultDomain <String> [-WhatIf] [-Confirm] [<CommonParameters>]
 
 
 
@@ -153,6 +153,8 @@ New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -DefaultDomain <Str
 | <nobr>Alias</nobr> |  | An optional alias for the group. If omitted, the group name is used as the alias. | false | false |  |
 | <nobr>PrimarySmtpAddress</nobr> |  | \(CustomDomain parameter set\) The full SMTP address for the group \(e.g. "MyGroup@contoso.com"\). This parameter is mandatory when using the 'CustomDomain' parameter set. | true | false |  |
 | <nobr>DefaultDomain</nobr> |  | \(DefaultDomain parameter set\) The domain portion to be appended to the group alias \(e.g. "Alias@DefaultDomain"\). This parameter is mandatory when using the 'DefaultDomain' parameter set. | true | false |  |
+| <nobr>WhatIf</nobr> | wi |  | false | false |  |
+| <nobr>Confirm</nobr> | cf |  | false | false |  |
 ### Inputs
  - None. This function does not accept pipeline input.
 
@@ -181,11 +183,13 @@ and a primary SMTP address of Senders@customdomain.org.
 
 ## Publish-TkEmailApp
 ### Synopsis
-Deploys a new Microsoft Graph Email app and associates it with a certificate for app-only authentication.
+Publishes a new or existing Graph Email App with specified configurations.
 ### Syntax
 ```powershell
 
-Publish-TkEmailApp [-AppPrefix] <String> [-AuthorizedSenderUserName] <String> [-MailEnabledSendingGroup] <String> [[-CertThumbprint] <String>] [[-KeyExportPolicy] <String>] [[-VaultName] <String>] [-OverwriteVaultSecret] [-ReturnParamSplat] [-WhatIf] [-Confirm] [<CommonParameters>]
+Publish-TkEmailApp [-AppPrefix <String>] -AuthorizedSenderUserName <String> -MailEnabledSendingGroup <String> [-CertPrefix <String>] [-CertThumbprint <String>] [-KeyExportPolicy <String>] [-VaultName <String>] [-OverwriteVaultSecret] [-ReturnParamSplat] [<CommonParameters>]
+
+Publish-TkEmailApp -ExistingAppObjectId <String> -CertPrefix <String> [-CertThumbprint <String>] [-KeyExportPolicy <String>] [-VaultName <String>] [-OverwriteVaultSecret] [-ReturnParamSplat] [<CommonParameters>]
 
 
 
@@ -194,31 +198,31 @@ Publish-TkEmailApp [-AppPrefix] <String> [-AuthorizedSenderUserName] <String> [-
 ### Parameters
 | Name  | Alias  | Description | Required? | Pipeline Input | Default Value |
 | - | - | - | - | - | - |
-| <nobr>AppPrefix</nobr> |  | A unique prefix for the Graph Email App to initialize. Ensure it is used consistently for grouping purposes \(2-4 alphanumeric characters\). | true | false |  |
-| <nobr>AuthorizedSenderUserName</nobr> |  | The username of the authorized sender. | true | false |  |
-| <nobr>MailEnabledSendingGroup</nobr> |  | The mail-enabled group to which the sender belongs. This will be used to assign app policy restrictions. | true | false |  |
-| <nobr>CertThumbprint</nobr> |  | An optional parameter indicating the thumbprint of the certificate to be retrieved. If not specified, a self-signed certificate will be generated. | false | false |  |
-| <nobr>KeyExportPolicy</nobr> |  | Specifies the key export policy for the newly created certificate. Valid values are 'Exportable' or 'NonExportable'. Defaults to 'NonExportable'. | false | false | NonExportable |
-| <nobr>VaultName</nobr> |  | If specified, the name of the vault to store the app's credentials. Otherwise, defaults to 'GraphEmailAppLocalStore'. | false | false | GraphEmailAppLocalStore |
-| <nobr>OverwriteVaultSecret</nobr> |  | If specified, the function overwrites an existing secret in the vault if it already exists. | false | false | False |
-| <nobr>ReturnParamSplat</nobr> |  | If specified, returns the parameter splat for use in other functions instead of the PSCustomObject. | false | false | False |
-| <nobr>WhatIf</nobr> | wi |  | false | false |  |
-| <nobr>Confirm</nobr> | cf |  | false | false |  |
-### Inputs
- - None
-
-### Outputs
- - By default, returns a PSCustomObject containing details such as AppId, CertThumbprint, TenantID, and CertExpires. If -ReturnParamSplat is specified, returns the parameter splat instead.
-
+| <nobr>AppPrefix</nobr> |  | The prefix used to initialize the Graph Email App. Must be 2-4 characters, letters, and numbers only. Default is 'Gtk'. | false | false | Gtk |
+| <nobr>AuthorizedSenderUserName</nobr> |  | The username of the authorized sender. Must be a valid email address. | true | false |  |
+| <nobr>MailEnabledSendingGroup</nobr> |  | The mail-enabled security group. Must be a valid email address. | true | false |  |
+| <nobr>ExistingAppObjectId</nobr> |  | The AppId of the existing App Registration to which you want to attach a certificate. Must be a valid GUID. | true | false |  |
+| <nobr>CertPrefix</nobr> |  | Prefix to add to the certificate subject for the existing app. | false | false |  |
+| <nobr>CertThumbprint</nobr> |  | The thumbprint of the certificate to be retrieved. Must be a valid 40-character hexadecimal string. | false | false |  |
+| <nobr>KeyExportPolicy</nobr> |  | Key export policy for the certificate. Valid values are 'Exportable' and 'NonExportable'. Default is 'NonExportable'. | false | false | NonExportable |
+| <nobr>VaultName</nobr> |  | If specified, use a custom vault name. Otherwise, use the default 'GraphEmailAppLocalStore'. | false | false | GraphEmailAppLocalStore |
+| <nobr>OverwriteVaultSecret</nobr> |  | If specified, overwrite the vault secret if it already exists. | false | false | False |
+| <nobr>ReturnParamSplat</nobr> |  | If specified, return the parameter splat for use in other functions. | false | false | False |
 ### Note
-This cmdlet requires that the user running the cmdlet have the necessary permissions to create the app and connect to Exchange Online. In addition, a mail-enabled security group must already exist in Exchange Online for the MailEnabledSendingGroup parameter. Permissions required: 'Application.ReadWrite.All', 'DelegatedPermissionGrant.ReadWrite.All', 'Directory.ReadWrite.All', 'RoleManagement.ReadWrite.Directory'
+This cmdlet requires that the user running the cmdlet have the necessary permissions to create the app and connect to Exchange Online. Permissions required: - 'Application.ReadWrite.All' - 'DelegatedPermissionGrant.ReadWrite.All' - 'Directory.ReadWrite.All' - 'RoleManagement.ReadWrite.Directory'
 
 ### Examples
 **EXAMPLE 1**
 ```powershell
-Publish-TkEmailApp -AppPrefix "ABC" -AuthorizedSenderUserName "jdoe@example.com" -MailEnabledSendingGroup "GraphAPIMailGroup@example.com" -CertThumbprint "AABBCCDDEEFF11223344556677889900"
+Publish-TkEmailApp -AppPrefix 'Gtk' -AuthorizedSenderUserName 'user@example.com' -MailEnabledSendingGroup 'group@example.com'
 ```
+Creates a new Graph Email App with the specified parameters.
 
+**EXAMPLE 2**
+```powershell
+Publish-TkEmailApp -ExistingAppObjectId '12345678-1234-1234-1234-1234567890ab' -CertPrefix 'Cert'
+```
+Uses an existing app and attaches a certificate with the specified prefix.
 
 ## Publish-TkM365AuditApp
 ### Synopsis
@@ -226,7 +230,7 @@ Publishes \(creates\) a new M365 Audit App registration in Entra ID \(Azure AD\)
 ### Syntax
 ```powershell
 
-Publish-TkM365AuditApp [[-AppPrefix] <String>] [[-CertThumbprint] <String>] [[-KeyExportPolicy] <String>] [[-VaultName] <String>] [-OverwriteVaultSecret] [-ReturnParamSplat] [-WhatIf] [-Confirm] [<CommonParameters>]
+Publish-TkM365AuditApp [[-AppPrefix] <String>] [[-CertThumbprint] <String>] [[-KeyExportPolicy] <String>] [[-VaultName] <String>] [-OverwriteVaultSecret] [-ReturnParamSplat] [<CommonParameters>]
 
 
 
@@ -235,14 +239,12 @@ Publish-TkM365AuditApp [[-AppPrefix] <String>] [[-CertThumbprint] <String>] [[-K
 ### Parameters
 | Name  | Alias  | Description | Required? | Pipeline Input | Default Value |
 | - | - | - | - | - | - |
-| <nobr>AppPrefix</nobr> |  | A short prefix \(2-4 alphanumeric characters\) used to build the app name. Defaults to "Gtk" if not specified. | false | false | Gtk |
+| <nobr>AppPrefix</nobr> |  | A short prefix \(2-4 alphanumeric characters\) used to build the app name. Defaults to "Gtk" if not specified. Example app name: GraphToolKit-MSN-GraphApp-MyDomain-As-helpDesk | false | false | Gtk |
 | <nobr>CertThumbprint</nobr> |  | The thumbprint of an existing certificate in the current user's certificate store. If not provided, a new self-signed certificate is created. | false | false |  |
 | <nobr>KeyExportPolicy</nobr> |  | Specifies whether the newly created certificate \(if no thumbprint is provided\) is 'Exportable' or 'NonExportable'. Defaults to 'NonExportable'. | false | false | NonExportable |
 | <nobr>VaultName</nobr> |  | The SecretManagement vault name in which to store the app credentials. Defaults to "M365AuditAppLocalStore" if not specified. | false | false | M365AuditAppLocalStore |
 | <nobr>OverwriteVaultSecret</nobr> |  | If specified, overwrites an existing secret in the specified vault if it already exists. | false | false | False |
 | <nobr>ReturnParamSplat</nobr> |  | If specified, returns a parameter splat string for use in other functions, instead of the default PSCustomObject containing the app details. | false | false | False |
-| <nobr>WhatIf</nobr> | wi |  | false | false |  |
-| <nobr>Confirm</nobr> | cf |  | false | false |  |
 ### Inputs
  - None. This function does not accept pipeline input.
 
@@ -267,7 +269,7 @@ Publishes a new MEM \(Intune\) Policy Manager App in Azure AD with read-only or 
 ### Syntax
 ```powershell
 
-Publish-TkMemPolicyManagerApp [-AppPrefix] <String> [[-CertThumbprint] <String>] [[-KeyExportPolicy] <String>] [[-VaultName] <String>] [-OverwriteVaultSecret] [-ReadWrite] [-ReturnParamSplat] [-WhatIf] [-Confirm] [<CommonParameters>]
+Publish-TkMemPolicyManagerApp [-AppPrefix] <String> [[-CertThumbprint] <String>] [[-KeyExportPolicy] <String>] [[-VaultName] <String>] [-OverwriteVaultSecret] [-ReadWrite] [-ReturnParamSplat] [<CommonParameters>]
 
 
 
@@ -283,8 +285,6 @@ Publish-TkMemPolicyManagerApp [-AppPrefix] <String> [[-CertThumbprint] <String>]
 | <nobr>OverwriteVaultSecret</nobr> |  | If specified, overwrites any existing secret of the same name in the vault. | false | false | False |
 | <nobr>ReadWrite</nobr> |  | If specified, grants read-write MEM/Intune permissions. Otherwise, read-only permissions are granted. | false | false | False |
 | <nobr>ReturnParamSplat</nobr> |  | If specified, returns a parameter splat string for use in other functions. Otherwise, returns a PSCustomObject containing the app details. | false | false | False |
-| <nobr>WhatIf</nobr> | wi |  | false | false |  |
-| <nobr>Confirm</nobr> | cf |  | false | false |  |
 ### Inputs
  - None. This function does not accept pipeline input.
 
@@ -309,9 +309,9 @@ Sends an email using the Microsoft Graph API, either by retrieving app credentia
 ### Syntax
 ```powershell
 
-Send-TkEmailAppMessage -AppName <String> -To <String> -FromAddress <String> -Subject <String> -EmailBody <String> [-AttachmentPath <String[]>] [<CommonParameters>]
+Send-TkEmailAppMessage -AppName <String> -To <String> -FromAddress <String> -Subject <String> -EmailBody <String> [-AttachmentPath <String[]>] [-VaultName <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
 
-Send-TkEmailAppMessage -AppId <String> -TenantId <String> -CertThumbprint <String> -To <String> -FromAddress <String> -Subject <String> -EmailBody <String> [-AttachmentPath <String[]>] [<CommonParameters>]
+Send-TkEmailAppMessage -AppId <String> -TenantId <String> -CertThumbprint <String> -To <String> -FromAddress <String> -Subject <String> -EmailBody <String> [-AttachmentPath <String[]>] [-WhatIf] [-Confirm] [<CommonParameters>]
 
 
 
@@ -320,15 +320,18 @@ Send-TkEmailAppMessage -AppId <String> -TenantId <String> -CertThumbprint <Strin
 ### Parameters
 | Name  | Alias  | Description | Required? | Pipeline Input | Default Value |
 | - | - | - | - | - | - |
-| <nobr>AppName</nobr> |  | \[Vault Parameter Set Only\] The name of the pre-created Microsoft Graph Email App \(stored in GraphEmailAppLocalStore\). Used only if the 'Vault' parameter set is chosen. The function retrieves the AppId, TenantId, and certificate thumbprint from the vault entry. | true | false |  |
-| <nobr>AppId</nobr> |  | \[Manual Parameter Set Only\] The Azure AD application \(client\) ID to use for sending the email. Must be used together with TenantId and CertThumbprint in the 'Manual' parameter set. | true | false |  |
-| <nobr>TenantId</nobr> |  | \[Manual Parameter Set Only\] The Azure AD tenant ID \(GUID or domain name\). Must be used together with AppId and CertThumbprint in the 'Manual' parameter set. | true | false |  |
-| <nobr>CertThumbprint</nobr> |  | \[Manual Parameter Set Only\] The certificate thumbprint \(in Cert:\\CurrentUser\\My\) used for authenticating as the Azure AD app. Must be used together with AppId and TenantId in the 'Manual' parameter set. | true | false |  |
+| <nobr>AppName</nobr> |  | \\[Vault Parameter Set Only\\] The name of the pre-created Microsoft Graph Email App \(stored in GraphEmailAppLocalStore\). Used only if the 'Vault' parameter set is chosen. The function retrieves the AppId, TenantId, and certificate thumbprint from the vault entry. | true | false |  |
+| <nobr>AppId</nobr> |  | \\[Manual Parameter Set Only\\] The Azure AD application \(client\) ID to use for sending the email. Must be used together with TenantId and CertThumbprint in the 'Manual' parameter set. | true | false |  |
+| <nobr>TenantId</nobr> |  | \\[Manual Parameter Set Only\\] The Azure AD tenant ID \(GUID or domain name\). Must be used together with AppId and CertThumbprint in the 'Manual' parameter set. | true | false |  |
+| <nobr>CertThumbprint</nobr> |  | \\[Manual Parameter Set Only\\] The certificate thumbprint \(in Cert:\\CurrentUser\\My\) used for authenticating as the Azure AD app. Must be used together with AppId and TenantId in the 'Manual' parameter set. | true | false |  |
 | <nobr>To</nobr> |  | The email address of the recipient. | true | false |  |
 | <nobr>FromAddress</nobr> |  | The email address of the sender who is authorized to send email as configured in the Graph Email App. | true | false |  |
 | <nobr>Subject</nobr> |  | The subject line of the email. | true | false |  |
 | <nobr>EmailBody</nobr> |  | The body text of the email. | true | false |  |
 | <nobr>AttachmentPath</nobr> |  | An array of file paths for any attachments to include in the email. Each path must exist as a leaf file. | false | false |  |
+| <nobr>VaultName</nobr> |  | \\[Vault Parameter Set Only\\] The name of the vault to retrieve the GraphEmailApp object. Default is 'GraphEmailAppLocalStore'. | false | false | GraphEmailAppLocalStore |
+| <nobr>WhatIf</nobr> | wi |  | false | false |  |
+| <nobr>Confirm</nobr> | cf |  | false | false |  |
 ### Note
 - This function requires the Microsoft.Graph, SecretManagement, SecretManagement.JustinGrote.CredMan, and MSAL.PS modules to be installed \(handled automatically via Initialize-TkModuleEnv\). - For the 'Vault' parameter set, the local vault secret must store JSON properties including AppId, TenantID, and CertThumbprint. - Refer to https://learn.microsoft.com/en-us/graph/outlook-send-mail for details on sending mail via Microsoft Graph.
 
