@@ -57,7 +57,7 @@ function Connect-TkMsService {
     # Section 1: Microsoft Graph
     #----------------------------------------------
     if ($MgGraph) {
-        $shouldProcessTarget = 'Connecting with scopes: Application.ReadWrite.All, DelegatedPermissionGrant.ReadWrite.All, Directory.ReadWrite.All, RoleManagement.ReadWrite.Directory'
+        $shouldProcessTarget = $GraphAuthScopes -join ', '
         $shouldProcessOperation = 'Connect-MgGraph'
         if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
             try {
