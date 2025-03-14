@@ -1,4 +1,4 @@
----
+﻿---
 Module Name: GraphAppToolkit
 Module Guid: b5426317-5612-4483-b664-beafc448bc2f
 Download Help Link: {{ Update Download Link }}
@@ -26,4 +26,3 @@ Publishes a new MEM (Intune) Policy Manager App in Azure AD with read-only or re
 ### [Send-TkEmailAppMessage](Send-TkEmailAppMessage)
 Sends an email using the Microsoft Graph API, either by retrieving app credentials from a local vault
 or by specifying them manually.
-
