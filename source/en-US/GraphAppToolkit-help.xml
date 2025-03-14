@@ -10,7 +10,7 @@
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>The New-MailEnabledSendingGroup function ensures that a mail-enabled security group is available for restricting email sending. It connects to Exchange Online to verify if a group of the specified name already exists. If the existing group is security-enabled, the function returns it; otherwise, it creates a new group of type "security" using either a custom primary SMTP address (CustomDomain) or a constructed address (DefaultDomain).</maml:para>
+      <maml:para>The New-MailEnabledSendingGroup function ensures that a mail-enabled security group is available for restricting email sending in Exchange Online. If a group of the specified name already exists and is security-enabled, the function returns that group. Otherwise, it creates a new security-enabled distribution group. You can specify either a custom primary SMTP address (via the 'CustomDomain' parameter set) or construct one using an alias and default domain (via the 'DefaultDomain' parameter set). By default, the 'CustomDomain' parameter set is used. If you wish to construct the SMTP address from the alias, switch to the 'DefaultDomain' parameter set.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem>
@@ -18,7 +18,7 @@
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Name</maml:name>
           <maml:description>
-            <maml:para>The name of the mail-enabled security group to create or retrieve.</maml:para>
+            <maml:para>The name of the mail-enabled security group to create or retrieve. This is also used as the alias if no separate Alias parameter is provided.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -42,7 +42,7 @@
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>PrimarySmtpAddress</maml:name>
           <maml:description>
-            <maml:para>(CustomDomain parameter set) The primary SMTP address to assign when using a custom domain (e.g., MyGroup@contoso.com).</maml:para>
+            <maml:para>(CustomDomain parameter set) The full SMTP address for the group (e.g. "MyGroup@contoso.com"). This parameter is mandatory when using the 'CustomDomain' parameter set.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -91,7 +91,7 @@
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>Name</maml:name>
           <maml:description>
-            <maml:para>The name of the mail-enabled security group to create or retrieve.</maml:para>
+            <maml:para>The name of the mail-enabled security group to create or retrieve. This is also used as the alias if no separate Alias parameter is provided.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -115,7 +115,7 @@
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>DefaultDomain</maml:name>
           <maml:description>
-            <maml:para>(DefaultDomain parameter set) The domain to append to the alias, forming an SMTP address (e.g., Alias@DefaultDomain).</maml:para>
+            <maml:para>(DefaultDomain parameter set) The domain portion to be appended to the group alias (e.g. "Alias@DefaultDomain"). This parameter is mandatory when using the 'DefaultDomain' parameter set.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -164,7 +164,7 @@
       <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>Name</maml:name>
         <maml:description>
-          <maml:para>The name of the mail-enabled security group to create or retrieve.</maml:para>
+          <maml:para>The name of the mail-enabled security group to create or retrieve. This is also used as the alias if no separate Alias parameter is provided.</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
@@ -188,7 +188,7 @@
       <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>PrimarySmtpAddress</maml:name>
         <maml:description>
-          <maml:para>(CustomDomain parameter set) The primary SMTP address to assign when using a custom domain (e.g., MyGroup@contoso.com).</maml:para>
+          <maml:para>(CustomDomain parameter set) The full SMTP address for the group (e.g. "MyGroup@contoso.com"). This parameter is mandatory when using the 'CustomDomain' parameter set.</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
@@ -200,7 +200,7 @@
       <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>DefaultDomain</maml:name>
         <maml:description>
-          <maml:para>(DefaultDomain parameter set) The domain to append to the alias, forming an SMTP address (e.g., Alias@DefaultDomain).</maml:para>
+          <maml:para>(DefaultDomain parameter set) The domain portion to be appended to the group alias (e.g. "Alias@DefaultDomain"). This parameter is mandatory when using the 'DefaultDomain' parameter set.</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
@@ -276,15 +276,28 @@
     </command:returnValues>
     <maml:alertSet>
       <maml:alert>
-        <maml:para>Requires connectivity to Exchange Online. The caller must have sufficient privileges to create or modify distribution groups.</maml:para>
+        <maml:para>- Requires connectivity to Exchange Online (Connect-TkMsService -ExchangeOnline).</maml:para>
+        <maml:para>- The caller must have sufficient privileges to create or modify distribution groups.</maml:para>
+        <maml:para>- DefaultParameterSetName = 'CustomDomain'.</maml:para>
       </maml:alert>
     </maml:alertSet>
     <command:examples>
       <command:example>
         <maml:title>-------------------------- EXAMPLE 1 --------------------------</maml:title>
-        <dev:code>New-MailEnabledSendingGroup -Name "SecureSenders" -DefaultDomain "contoso.com"</dev:code>
+        <dev:code>New-MailEnabledSendingGroup -Name "SecureSenders" -DefaultDomain "contoso.com"
+Creates a new mail-enabled security group named "SecureSenders" with a primary SMTP address
+of SecureSenders@contoso.com.</dev:code>
         <dev:remarks>
-          <maml:para>Creates a new mail-enabled security group named "SecureSenders" with a primary SMTP address of SecureSenders@contoso.com.</maml:para>
+          <maml:para></maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>-------------------------- EXAMPLE 2 --------------------------</maml:title>
+        <dev:code>New-MailEnabledSendingGroup -Name "SecureSenders" -Alias "Senders" -PrimarySmtpAddress "Senders@customdomain.org"
+Creates a new mail-enabled security group named "SecureSenders" with an alias "Senders"
+and a primary SMTP address of Senders@customdomain.org.</dev:code>
+        <dev:remarks>
+          <maml:para></maml:para>
         </dev:remarks>
       </command:example>
     </command:examples>
@@ -296,11 +309,11 @@
       <command:verb>Publish</command:verb>
       <command:noun>TkEmailApp</command:noun>
       <maml:description>
-        <maml:para>Deploys a new Microsoft Graph Email app and associates it with a certificate for app-only authentication.</maml:para>
+        <maml:para>Publishes a new or existing Graph Email App with specified configurations.</maml:para>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>This cmdlet deploys a new Microsoft Graph Email app and associates it with a certificate for app-only authentication. It requires an AppPrefix for the app, an optional CertThumbprint, an AuthorizedSenderUserName, and a MailEnabledSendingGroup. Additionally, you can specify a KeyExportPolicy for the certificate, control how secrets are stored via VaultName and OverwriteVaultSecret, and optionally return a parameter splat instead of a PSCustomObject.</maml:para>
+      <maml:para>The Publish-TkEmailApp function creates or configures a Graph Email App in Azure AD. It supports two scenarios: 1. Creating a new app with specified parameters. 2. Using an existing app and attaching a certificate to it.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem>
@@ -308,19 +321,19 @@
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>AppPrefix</maml:name>
           <maml:description>
-            <maml:para>A unique prefix for the Graph Email App to initialize. Ensure it is used consistently for grouping purposes (2-4 alphanumeric characters).</maml:para>
+            <maml:para>The prefix used to initialize the Graph Email App. Must be 2-4 characters, letters, and numbers only. Default is 'Gtk'.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
             <maml:name>String</maml:name>
             <maml:uri />
           </dev:type>
-          <dev:defaultValue>None</dev:defaultValue>
+          <dev:defaultValue>Gtk</dev:defaultValue>
         </command:parameter>
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>AuthorizedSenderUserName</maml:name>
           <maml:description>
-            <maml:para>The username of the authorized sender.</maml:para>
+            <maml:para>The username of the authorized sender. Must be a valid email address.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -332,7 +345,7 @@
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>MailEnabledSendingGroup</maml:name>
           <maml:description>
-            <maml:para>The mail-enabled group to which the sender belongs. This will be used to assign app policy restrictions.</maml:para>
+            <maml:para>The mail-enabled security group. Must be a valid email address.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -356,7 +369,7 @@
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>CertThumbprint</maml:name>
           <maml:description>
-            <maml:para>An optional parameter indicating the thumbprint of the certificate to be retrieved. If not specified, a self-signed certificate will be generated.</maml:para>
+            <maml:para>The thumbprint of the certificate to be retrieved. Must be a valid 40-character hexadecimal string.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -368,7 +381,7 @@
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>KeyExportPolicy</maml:name>
           <maml:description>
-            <maml:para>Specifies the key export policy for the newly created certificate. Valid values are 'Exportable' or 'NonExportable'. Defaults to 'NonExportable'.</maml:para>
+            <maml:para>Key export policy for the certificate. Valid values are 'Exportable' and 'NonExportable'. Default is 'NonExportable'.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -380,7 +393,7 @@
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>VaultName</maml:name>
           <maml:description>
-            <maml:para>If specified, the name of the vault to store the app's credentials. Otherwise, defaults to 'GraphEmailAppLocalStore'.</maml:para>
+            <maml:para>If specified, use a custom vault name. Otherwise, use the default 'GraphEmailAppLocalStore'.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -392,7 +405,7 @@
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>OverwriteVaultSecret</maml:name>
           <maml:description>
-            <maml:para>If specified, the function overwrites an existing secret in the vault if it already exists.</maml:para>
+            <maml:para>If specified, overwrite the vault secret if it already exists.</maml:para>
           </maml:description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
@@ -403,7 +416,7 @@
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>ReturnParamSplat</maml:name>
           <maml:description>
-            <maml:para>If specified, returns the parameter splat for use in other functions instead of the PSCustomObject.</maml:para>
+            <maml:para>If specified, return the parameter splat for use in other functions.</maml:para>
           </maml:description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
@@ -464,7 +477,7 @@
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>CertThumbprint</maml:name>
           <maml:description>
-            <maml:para>An optional parameter indicating the thumbprint of the certificate to be retrieved. If not specified, a self-signed certificate will be generated.</maml:para>
+            <maml:para>The thumbprint of the certificate to be retrieved. Must be a valid 40-character hexadecimal string.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -476,7 +489,7 @@
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>KeyExportPolicy</maml:name>
           <maml:description>
-            <maml:para>Specifies the key export policy for the newly created certificate. Valid values are 'Exportable' or 'NonExportable'. Defaults to 'NonExportable'.</maml:para>
+            <maml:para>Key export policy for the certificate. Valid values are 'Exportable' and 'NonExportable'. Default is 'NonExportable'.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -488,7 +501,7 @@
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>VaultName</maml:name>
           <maml:description>
-            <maml:para>If specified, the name of the vault to store the app's credentials. Otherwise, defaults to 'GraphEmailAppLocalStore'.</maml:para>
+            <maml:para>If specified, use a custom vault name. Otherwise, use the default 'GraphEmailAppLocalStore'.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -500,7 +513,7 @@
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>OverwriteVaultSecret</maml:name>
           <maml:description>
-            <maml:para>If specified, the function overwrites an existing secret in the vault if it already exists.</maml:para>
+            <maml:para>If specified, overwrite the vault secret if it already exists.</maml:para>
           </maml:description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
@@ -511,7 +524,7 @@
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>ReturnParamSplat</maml:name>
           <maml:description>
-            <maml:para>If specified, returns the parameter splat for use in other functions instead of the PSCustomObject.</maml:para>
+            <maml:para>If specified, return the parameter splat for use in other functions.</maml:para>
           </maml:description>
           <dev:type>
             <maml:name>SwitchParameter</maml:name>
@@ -548,19 +561,19 @@
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>AppPrefix</maml:name>
         <maml:description>
-          <maml:para>A unique prefix for the Graph Email App to initialize. Ensure it is used consistently for grouping purposes (2-4 alphanumeric characters).</maml:para>
+          <maml:para>The prefix used to initialize the Graph Email App. Must be 2-4 characters, letters, and numbers only. Default is 'Gtk'.</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
           <maml:name>String</maml:name>
           <maml:uri />
         </dev:type>
-        <dev:defaultValue>None</dev:defaultValue>
+        <dev:defaultValue>Gtk</dev:defaultValue>
       </command:parameter>
       <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>AuthorizedSenderUserName</maml:name>
         <maml:description>
-          <maml:para>The username of the authorized sender.</maml:para>
+          <maml:para>The username of the authorized sender. Must be a valid email address.</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
@@ -572,7 +585,7 @@
       <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>MailEnabledSendingGroup</maml:name>
         <maml:description>
-          <maml:para>The mail-enabled group to which the sender belongs. This will be used to assign app policy restrictions.</maml:para>
+          <maml:para>The mail-enabled security group. Must be a valid email address.</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
@@ -608,7 +621,7 @@
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>CertThumbprint</maml:name>
         <maml:description>
-          <maml:para>An optional parameter indicating the thumbprint of the certificate to be retrieved. If not specified, a self-signed certificate will be generated.</maml:para>
+          <maml:para>The thumbprint of the certificate to be retrieved. Must be a valid 40-character hexadecimal string.</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
@@ -620,7 +633,7 @@
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>KeyExportPolicy</maml:name>
         <maml:description>
-          <maml:para>Specifies the key export policy for the newly created certificate. Valid values are 'Exportable' or 'NonExportable'. Defaults to 'NonExportable'.</maml:para>
+          <maml:para>Key export policy for the certificate. Valid values are 'Exportable' and 'NonExportable'. Default is 'NonExportable'.</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
@@ -632,7 +645,7 @@
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>VaultName</maml:name>
         <maml:description>
-          <maml:para>If specified, the name of the vault to store the app's credentials. Otherwise, defaults to 'GraphEmailAppLocalStore'.</maml:para>
+          <maml:para>If specified, use a custom vault name. Otherwise, use the default 'GraphEmailAppLocalStore'.</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
@@ -644,7 +657,7 @@
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>OverwriteVaultSecret</maml:name>
         <maml:description>
-          <maml:para>If specified, the function overwrites an existing secret in the vault if it already exists.</maml:para>
+          <maml:para>If specified, overwrite the vault secret if it already exists.</maml:para>
         </maml:description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
@@ -656,7 +669,7 @@
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>ReturnParamSplat</maml:name>
         <maml:description>
-          <maml:para>If specified, returns the parameter splat for use in other functions instead of the PSCustomObject.</maml:para>
+          <maml:para>If specified, return the parameter splat for use in other functions.</maml:para>
         </maml:description>
         <command:parameterValue required="false" variableLength="false">SwitchParameter</command:parameterValue>
         <dev:type>
@@ -694,14 +707,100 @@
     <command:returnValues />
     <maml:alertSet>
       <maml:alert>
-        <maml:para>This cmdlet requires that the user running the cmdlet have the necessary permissions to create the app and connect to Exchange Online. In addition, a mail-enabled security group must already exist in Exchange Online for the MailEnabledSendingGroup parameter.</maml:para>
-        <maml:para>Permissions required:     'Application.ReadWrite.All',     'DelegatedPermissionGrant.ReadWrite.All',     'Directory.ReadWrite.All',     'RoleManagement.ReadWrite.Directory'</maml:para>
+        <maml:para>This cmdlet requires that the user running the cmdlet have the necessary permissions to create the app and connect to Exchange Online.</maml:para>
       </maml:alert>
     </maml:alertSet>
     <command:examples>
       <command:example>
         <maml:title>-------------------------- EXAMPLE 1 --------------------------</maml:title>
-        <dev:code>Publish-TkEmailApp -AppPrefix "ABC" -AuthorizedSenderUserName "jdoe@example.com" -MailEnabledSendingGroup "GraphAPIMailGroup@example.com" -CertThumbprint "AABBCCDDEEFF11223344556677889900"</dev:code>
+        <dev:code># Permissions required for app registration:
+    - 'Application.ReadWrite.All'
+    - 'DelegatedPermissionGrant.ReadWrite.All'
+    - 'Directory.ReadWrite.All'
+    - 'RoleManagement.ReadWrite.Directory'
+# Permissions granted to the app:
+    - 'Mail.Send' (Application) - Send mail as any user
+    # Exchange application policy restricts send to a mail enabled security group
+# Ensure a mail enabled sending group is created first:
+    $DefaultDomain = 'contoso.com'
+    $MailEnabledSendingGroupToCreate = "CTSO-GraphAPIMail"
+# Creates a mail-enabled security group named "MySenders" using a default domain
+    $group = New-MailEnabledSendingGroup -Name $MailEnabledSendingGroupToCreate -DefaultDomain $DefaultDomain
+# Create a new Graph Email App for a single tenant
+    $LicensedUserToSendAs = 'helpdesk@contoso.com'
+    Publish-TkEmailApp `
+        -AuthorizedSenderUserName $LicensedUserToSendAs `
+        -MailEnabledSendingGroup $group.PrimarySmtpAddress `
+        -ReturnParamSplat
+# Returns an app named like 'GraphToolKit-Gtk-&lt;Session AD Domain&gt;-As-helpdesk'
+# Returns a param splat that can be used as input for the send mail function:
+# Example:
+    $params = @{
+        AppId                  = 'your-app-id'
+        Id                     = 'your-app-object-id'
+        AppName                = 'GraphToolKit-Gtk-&lt;Session AD Domain&gt;-As-helpdesk'
+        CertificateSubject     = 'GraphToolKit-GTK-&lt;Session AD Domain&gt;-As-helpdesk'
+        AppRestrictedSendGroup = 'CTSO-GraphAPIMail@contoso.com'
+        CertExpires            = 'yyyy-MM-dd HH:mm:ss'
+        CertThumbprint         = 'your-cert-thumbprint'
+        ConsentUrl             = 'https://login.microsoftonline.com/&lt;your-tenant-id&gt;/adminconsent?client_id=&lt;your-app-id&gt;'
+        DefaultDomain          = 'contoso.com'
+        SendAsUser             = 'helpdesk'
+        SendAsUserEmail        = 'helpdesk@contoso.com'
+        TenantID               = 'your-tenant-id'
+    }</dev:code>
+        <dev:remarks>
+          <maml:para></maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>-------------------------- EXAMPLE 2 --------------------------</maml:title>
+        <dev:code># Create a multi client app registration where one app exists and multiple certificates are associated to the app:
+# Initial setup:
+# Create the group as before (or reuse the existing group) and run the following commands:
+    $LicensedUserToSendAs = 'helpdesk@contoso.com'
+    $CertPrefix = "CTSO" # First Company prefix. This will be used to prefix the certificate subject.
+    Publish-TkEmailApp `
+        -CertPrefix $CertPrefix `
+        -AuthorizedSenderUserName $LicensedUserToSendAs `
+        -MailEnabledSendingGroup $group.PrimarySmtpAddress `
+        -ReturnParamSplat
+# Returns an app named like 'GraphToolKit-Gtk-&lt;Session AD Domain&gt;-As-helpdesk'
+    $params = @{
+        AppId                  = 'your-app-id'
+        Id                     = 'your-app-object-id'
+        AppName                = 'GraphToolKit-Gtk-&lt;Session AD Domain&gt;-As-helpdesk'
+        CertificateSubject     = 'GraphToolKit-CTSO-&lt;Session AD Domain&gt;-As-helpdesk'
+        AppRestrictedSendGroup = 'CTSO-GraphAPIMail@contoso.com'
+        CertExpires            = 'yyyy-MM-dd HH:mm:ss'
+        CertThumbprint         = 'your-cert-thumbprint'
+        ConsentUrl             = 'https://login.microsoftonline.com/&lt;your-tenant-id&gt;/adminconsent?client_id=&lt;your-app-id&gt;'
+        DefaultDomain          = 'contoso.com'
+        SendAsUser             = 'helpdesk'
+        SendAsUserEmail        = 'helpdesk@contoso.com'
+        TenantID               = 'your-tenant-id'
+    }
+    $useExistingParams = @{
+        ExistingAppObjectId  = $params.Id
+        CertPrefix           = 'NewCompany'
+        OverwriteVaultSecret = $true      # optional, if you want to overwrite the existing vault secret
+        ReturnParamSplat     = $true      # optional, returns the param splat
+    }
+    Publish-TkEmailApp @useExistingParams
+# The new Cert will be prefixed with the new company prefix and will allow the current client to authenticate.
+# Back in the app registrations console, if you look at the internal notes in the properties of the app:
+# The app's "Internal Notes" will be populated with the following json:
+# Assists in tracking the app's usage and configuration.
+    {
+        "GraphEmailAppFor": "helpdesk@contoso.com",
+        "RestrictedToGroup": "CTSO-GraphAPIMail@contoso.com",
+        "AppPermissions": "Mail.Send",
+        "New-Company_ClientIP": "&lt;Public IP Address of the client where the app was called&gt;",
+        "New-Company_Host": "&lt;Host of the client where the app was called&gt;",
+        "NewCoolCompany_ClientIP": "&lt;Public IP Address of the client where the app was called&gt;",
+        "NewCoolCompany_Host": "Host of the client where the app was called&gt;"
+    }
+    # New cert additions added through the toolkit will append new client info to these notes.</dev:code>
         <dev:remarks>
           <maml:para></maml:para>
         </dev:remarks>
@@ -727,7 +826,7 @@
         <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
           <maml:name>AppPrefix</maml:name>
           <maml:description>
-            <maml:para>A short prefix (2-4 alphanumeric characters) used to build the app name. Defaults to "Gtk" if not specified.</maml:para>
+            <maml:para>A short prefix (2-4 alphanumeric characters) used to build the app name. Defaults to "Gtk" if not specified. Example app name: GraphToolKit-MSN-GraphApp-MyDomain-As-helpDesk</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -823,7 +922,7 @@
       <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="1" aliases="none">
         <maml:name>AppPrefix</maml:name>
         <maml:description>
-          <maml:para>A short prefix (2-4 alphanumeric characters) used to build the app name. Defaults to "Gtk" if not specified.</maml:para>
+          <maml:para>A short prefix (2-4 alphanumeric characters) used to build the app name. Defaults to "Gtk" if not specified. Example app name: GraphToolKit-MSN-GraphApp-MyDomain-As-helpDesk</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
@@ -955,8 +1054,8 @@
     </command:returnValues>
     <maml:alertSet>
       <maml:alert>
-        <maml:para>Requires the Microsoft.Graph and ExchangeOnlineManagement modules for app creation and role assignment. The user must have sufficient privileges to create and manage applications in Azure AD, and to assign roles. After creation, admin consent may be required for the assigned permissions.</maml:para>
-        <maml:para>Permissions required:     'Application.ReadWrite.All',     'DelegatedPermissionGrant.ReadWrite.All',     'Directory.ReadWrite.All',     'RoleManagement.ReadWrite.Directory'</maml:para>
+        <maml:para>Requires the Microsoft.Graph and ExchangeOnlineManagement modules for app creation and role assignment. The user must have sufficient privileges to create and manage applications in Azure AD, and to assign roles. After creation, admin consent may be required for the assigned permissions. Permissions required for app registration:     'Application.ReadWrite.All',     'DelegatedPermissionGrant.ReadWrite.All',     'Directory.ReadWrite.All',     'RoleManagement.ReadWrite.Directory'</maml:para>
+        <maml:para>Permissions granted to the app: (Exchange Administrator and Global Reader Roles are also added to the service principal.)     'AppCatalog.ReadWrite.All',     'Channel.Delete.All',     'ChannelMember.ReadWrite.All',     'ChannelSettings.ReadWrite.All',     'Directory.Read.All',     'Group.ReadWrite.All',     'Organization.Read.All',     'Policy.Read.All',     'Domain.Read.All',     'TeamSettings.ReadWrite.All',     'User.Read.All',     'Sites.Read.All',     'Sites.FullControl.All',     'Exchange.ManageAsApp'</maml:para>
       </maml:alert>
     </maml:alertSet>
     <command:examples>
@@ -1241,16 +1340,20 @@ the credentials in the default vault.</dev:code>
     </command:returnValues>
     <maml:alertSet>
       <maml:alert>
-        <maml:para>This function requires the Microsoft.Graph module for application creation and the user must have permissions in Azure AD to register and grant permissions to the application. After creation, admin consent may be needed to finalize the permission grants.</maml:para>
-        <maml:para>    Permissions required:         'Application.ReadWrite.All',         'DelegatedPermissionGrant.ReadWrite.All',         'Directory.ReadWrite.All',         'RoleManagement.ReadWrite.Directory'</maml:para>
+        <maml:para>This function requires the Microsoft.Graph module for application creation and the user must have permissions in Azure AD to register and grant permissions to the application. After creation, admin consent may be needed to finalize the permission grants. Permissions required for app registration::     'Application.ReadWrite.All',     'DelegatedPermissionGrant.ReadWrite.All',     'Directory.ReadWrite.All'</maml:para>
+        <maml:para>Permissions required for read-only access:</maml:para>
+        <maml:para>    'DeviceManagementConfiguration.Read.All',     'DeviceManagementApps.Read.All',     'DeviceManagementManagedDevices.Read.All',     'Policy.Read.ConditionalAccess',     'Policy.Read.All'</maml:para>
+        <maml:para>Permissions required for read-write access:     'DeviceManagementConfiguration.ReadWrite.All',     'DeviceManagementApps.ReadWrite.All',     'DeviceManagementManagedDevices.ReadWrite.All',     'Policy.ReadWrite.ConditionalAccess',     'Policy.Read.All'</maml:para>
       </maml:alert>
     </maml:alertSet>
     <command:examples>
       <command:example>
         <maml:title>-------------------------- EXAMPLE 1 --------------------------</maml:title>
-        <dev:code>Publish-TkMemPolicyManagerApp -AppPrefix "CORP" -ReadWrite</dev:code>
+        <dev:code>Publish-TkMemPolicyManagerApp -AppPrefix "CORP" -ReadWrite
+Creates a new MEM Policy Manager App with read-write permissions, retrieves or
+creates a certificate, and stores the credentials in the default vault.</dev:code>
         <dev:remarks>
-          <maml:para>Creates a new MEM Policy Manager App with read-write permissions, retrieves or creates a certificate, and stores the credentials in the default vault.</maml:para>
+          <maml:para></maml:para>
         </dev:remarks>
       </command:example>
     </command:examples>
@@ -1266,8 +1369,7 @@ the credentials in the default vault.</dev:code>
       </maml:description>
     </command:details>
     <maml:description>
-      <maml:para>The Send-TkEmailAppMessage function uses the Microsoft Graph API to send an email to a specified recipient. It supports two parameter sets:</maml:para>
-      <maml:para>1. 'Vault' (default): Provide an existing app name (AppName) whose credentials are stored in the local     secret vault (e.g., GraphEmailAppLocalStore). The function retrieves the AppId, TenantId, and     certificate thumbprint automatically. 2. 'Manual': Provide the AppId, TenantId, and certificate thumbprint yourself, bypassing the vault. In both cases, the function obtains an OAuth2 token (via MSAL.PS) using the specified certificate and uses the Microsoft Graph 'sendMail' endpoint to deliver the message.</maml:para>
+      <maml:para>The Send-TkEmailAppMessage function uses the Microsoft Graph API to send an email to a specified recipient. It supports two parameter sets: 1. 'Vault' (default): Provide an existing app name (AppName) whose credentials are stored in the     local secret vault (e.g., GraphEmailAppLocalStore). The function retrieves the AppId, TenantId,     and certificate thumbprint automatically. 2. 'Manual': Provide the AppId, TenantId, and certificate thumbprint yourself, bypassing the vault.     In both cases, the function obtains an OAuth2 token (via MSAL.PS) using the specified certificate     and uses the Microsoft Graph 'sendMail' endpoint to deliver the message.</maml:para>
     </maml:description>
     <command:syntax>
       <command:syntaxItem>
@@ -1275,7 +1377,7 @@ the credentials in the default vault.</dev:code>
         <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
           <maml:name>AppName</maml:name>
           <maml:description>
-            <maml:para>[Vault Parameter Set Only] The name of the pre-created Microsoft Graph Email App (stored in GraphEmailAppLocalStore). This parameter is used only if the 'Vault' parameter set is chosen. The function retrieves the AppId, TenantId, and certificate thumbprint from the vault entry.</maml:para>
+            <maml:para>[Vault Parameter Set Only] The name of the pre-created Microsoft Graph Email App (stored in GraphEmailAppLocalStore). Used only if the 'Vault' parameter set is chosen. The function retrieves the AppId, TenantId, and certificate thumbprint from the vault entry.</maml:para>
           </maml:description>
           <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
           <dev:type>
@@ -1529,7 +1631,7 @@ the credentials in the default vault.</dev:code>
       <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="none">
         <maml:name>AppName</maml:name>
         <maml:description>
-          <maml:para>[Vault Parameter Set Only] The name of the pre-created Microsoft Graph Email App (stored in GraphEmailAppLocalStore). This parameter is used only if the 'Vault' parameter set is chosen. The function retrieves the AppId, TenantId, and certificate thumbprint from the vault entry.</maml:para>
+          <maml:para>[Vault Parameter Set Only] The name of the pre-created Microsoft Graph Email App (stored in GraphEmailAppLocalStore). Used only if the 'Vault' parameter set is chosen. The function retrieves the AppId, TenantId, and certificate thumbprint from the vault entry.</maml:para>
         </maml:description>
         <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
         <dev:type>
@@ -1687,7 +1789,7 @@ the credentials in the default vault.</dev:code>
     <command:returnValues />
     <maml:alertSet>
       <maml:alert>
-        <maml:para>- This function requires the Microsoft.Graph, SecretManagement, SecretManagement.JustinGrote.CredMan,     and MSAL.PS modules to be installed and imported (handled automatically via Initialize-TkModuleEnv). - For the 'Vault' parameter set, the local vault secret must store JSON properties including AppId,     TenantID, and CertThumbprint. - Refer to https://learn.microsoft.com/en-us/graph/outlook-send-mail for more details on sending mail     via Microsoft Graph.</maml:para>
+        <maml:para>- This function requires the Microsoft.Graph, SecretManagement, SecretManagement.JustinGrote.CredMan,     and MSAL.PS modules to be installed (handled automatically via Initialize-TkModuleEnv). - For the 'Vault' parameter set, the local vault secret must store JSON properties including AppId,     TenantID, and CertThumbprint. - Refer to https://learn.microsoft.com/en-us/graph/outlook-send-mail for details on sending mail     via Microsoft Graph.</maml:para>
       </maml:alert>
     </maml:alertSet>
     <command:examples>
@@ -1695,19 +1797,22 @@ the credentials in the default vault.</dev:code>
         <maml:title>-------------------------- EXAMPLE 1 --------------------------</maml:title>
         <dev:code># Using the 'Vault' parameter set
 Send-TkEmailAppMessage -AppName "GraphEmailApp" -To "recipient@example.com" -FromAddress "sender@example.com" `
-                    -Subject "Test Email" -EmailBody "This is a test email."</dev:code>
+    -Subject "Test Email" -EmailBody "This is a test email."
+Retrieves the app's credentials (AppId, TenantId, CertThumbprint) from the local vault under the
+secret name "GraphEmailApp" and sends an email.</dev:code>
         <dev:remarks>
-          <maml:para>In this example, the function retrieves the app's credentials (AppId, TenantId, CertThumbprint) from the local vault (GraphEmailAppLocalStore) under the secret name "GraphEmailApp."</maml:para>
+          <maml:para></maml:para>
         </dev:remarks>
       </command:example>
       <command:example>
         <maml:title>-------------------------- EXAMPLE 2 --------------------------</maml:title>
         <dev:code># Using the 'Manual' parameter set
 Send-TkEmailAppMessage -AppId "00000000-1111-2222-3333-444444444444" -TenantId "contoso.onmicrosoft.com" `
-                    -CertThumbprint "AABBCCDDEEFF11223344556677889900" -To "recipient@example.com" `
-                    -FromAddress "sender@example.com" -Subject "Manual Email" -EmailBody "Hello from Manual!"</dev:code>
+    -CertThumbprint "AABBCCDDEEFF11223344556677889900" -To "recipient@example.com" -FromAddress "sender@example.com" `
+    -Subject "Manual Email" -EmailBody "Hello from Manual!"
+Uses the provided AppId, TenantId, and CertThumbprint directly (no vault) to obtain a token and send an email.</dev:code>
         <dev:remarks>
-          <maml:para>In this example, no vault entry is used. Instead, the function directly uses the provided AppId, TenantId, and CertThumbprint to obtain a token and send an email.</maml:para>
+          <maml:para></maml:para>
         </dev:remarks>
       </command:example>
     </command:examples>

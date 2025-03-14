@@ -77,20 +77,100 @@ Publish-TkEmailApp -ExistingAppObjectId <String> -CertPrefix <String> [-CertThum
 | <nobr>ReturnParamSplat</nobr> |  | If specified, return the parameter splat for use in other functions. | false | false | False |
 | <nobr>DoNotUseDomainSuffix</nobr> |  | Switch to add session domain suffix to the app name. | false | false | False |
 ### Note
-This cmdlet requires that the user running the cmdlet have the necessary permissions to create the app and connect to Exchange Online. Permissions required for app registration: - 'Application.ReadWrite.All' - 'DelegatedPermissionGrant.ReadWrite.All' - 'Directory.ReadWrite.All' - 'RoleManagement.ReadWrite.Directory'  Permissions granted to the app: - 'Mail.Send' \(Application\\) - Send mail as any user Exchange application policy restricts send to a mail enabled security group
+This cmdlet requires that the user running the cmdlet have the necessary permissions to create the app and connect to Exchange Online.
 
 ### Examples
 **EXAMPLE 1**
 ```powershell
-Publish-TkEmailApp -AppPrefix 'Gtk' -AuthorizedSenderUserName 'user@example.com' -MailEnabledSendingGroup 'group@example.com'
+# Permissions required for app registration:
+- 'Application.ReadWrite.All'
+- 'DelegatedPermissionGrant.ReadWrite.All'
+- 'Directory.ReadWrite.All'
+- 'RoleManagement.ReadWrite.Directory'
+# Permissions granted to the app:
+- 'Mail.Send' (Application) - Send mail as any user
+# Exchange application policy restricts send to a mail enabled security group
+# Ensure a mail enabled sending group is created first:
+$DefaultDomain = 'contoso.com'
+$MailEnabledSendingGroupToCreate = "CTSO-GraphAPIMail"
+# Creates a mail-enabled security group named "MySenders" using a default domain
+$group = New-MailEnabledSendingGroup -Name $MailEnabledSendingGroupToCreate -DefaultDomain $DefaultDomain
+# Create a new Graph Email App for a single tenant
+$LicensedUserToSendAs = 'helpdesk@contoso.com'
+Publish-TkEmailApp `
+-AuthorizedSenderUserName $LicensedUserToSendAs `
+-MailEnabledSendingGroup $group.PrimarySmtpAddress `
+-ReturnParamSplat
+# Returns an app named like 'GraphToolKit-Gtk-<Session AD Domain>-As-helpdesk'
+# Returns a param splat that can be used as input for the send mail function:
+# Example:
+$params = @{
+AppId                  = 'your-app-id'
+Id                     = 'your-app-object-id'
+AppName                = 'GraphToolKit-Gtk-<Session AD Domain>-As-helpdesk'
+CertificateSubject     = 'GraphToolKit-GTK-<Session AD Domain>-As-helpdesk'
+AppRestrictedSendGroup = 'CTSO-GraphAPIMail@contoso.com'
+CertExpires            = 'yyyy-MM-dd HH:mm:ss'
+CertThumbprint         = 'your-cert-thumbprint'
+ConsentUrl             = 'https://login.microsoftonline.com/<your-tenant-id>/adminconsent?client_id=<your-app-id>'
+DefaultDomain          = 'contoso.com'
+SendAsUser             = 'helpdesk'
+SendAsUserEmail        = 'helpdesk@contoso.com'
+TenantID               = 'your-tenant-id'
+}
 ```
-Creates a new Graph Email App with the specified parameters.
+
 
 **EXAMPLE 2**
 ```powershell
-Publish-TkEmailApp -ExistingAppObjectId '12345678-1234-1234-1234-1234567890ab' -CertPrefix 'Cert'
+# Create a multi client app registration where one app exists and multiple certificates are associated to the app:
+# Initial setup:
+# Create the group as before (or reuse the existing group) and run the following commands:
+$LicensedUserToSendAs = 'helpdesk@contoso.com'
+$CertPrefix = "CTSO" # First Company prefix. This will be used to prefix the certificate subject.
+Publish-TkEmailApp `
+-CertPrefix $CertPrefix `
+-AuthorizedSenderUserName $LicensedUserToSendAs `
+-MailEnabledSendingGroup $group.PrimarySmtpAddress `
+-ReturnParamSplat
+# Returns an app named like 'GraphToolKit-Gtk-<Session AD Domain>-As-helpdesk'
+$params = @{
+AppId                  = 'your-app-id'
+Id                     = 'your-app-object-id'
+AppName                = 'GraphToolKit-Gtk-<Session AD Domain>-As-helpdesk'
+CertificateSubject     = 'GraphToolKit-CTSO-<Session AD Domain>-As-helpdesk'
+AppRestrictedSendGroup = 'CTSO-GraphAPIMail@contoso.com'
+CertExpires            = 'yyyy-MM-dd HH:mm:ss'
+CertThumbprint         = 'your-cert-thumbprint'
+ConsentUrl             = 'https://login.microsoftonline.com/<your-tenant-id>/adminconsent?client_id=<your-app-id>'
+DefaultDomain          = 'contoso.com'
+SendAsUser             = 'helpdesk'
+SendAsUserEmail        = 'helpdesk@contoso.com'
+TenantID               = 'your-tenant-id'
+}
+$useExistingParams = @{
+ExistingAppObjectId  = $params.Id
+CertPrefix           = 'NewCompany'
+OverwriteVaultSecret = $true      # optional, if you want to overwrite the existing vault secret
+ReturnParamSplat     = $true      # optional, returns the param splat
+}
+Publish-TkEmailApp @useExistingParams
+# The new Cert will be prefixed with the new company prefix and will allow the current client to authenticate.
+# Back in the app registrations console, if you look at the internal notes in the properties of the app:
+# The app's "Internal Notes" will be populated with the following json:
+# Assists in tracking the app's usage and configuration.
+{
+"GraphEmailAppFor": "helpdesk@contoso.com",
+"RestrictedToGroup": "CTSO-GraphAPIMail@contoso.com",
+"AppPermissions": "Mail.Send",
+"New-Company_ClientIP": "<Public IP Address of the client where the app was called>",
+"New-Company_Host": "<Host of the client where the app was called>",
+"NewCoolCompany_ClientIP": "<Public IP Address of the client where the app was called>",
+"NewCoolCompany_Host": "Host of the client where the app was called>"
+}
+# New cert additions added through the toolkit will append new client info to these notes.
 ```
-Uses an existing app and attaches a certificate with the specified prefix.
+
 
 ## Publish-TkM365AuditApp
 ### Synopsis

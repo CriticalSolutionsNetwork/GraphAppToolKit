@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Updated docs for the module.
+- Release Candidate
+- Update wiki pages.
+
+## [0.2.0-preview0001] - 2025-03-14
+
+### Added
+
 - Added cert options to the GraphAppToolkit send email.
 - Updated auth methods to invoke needed permissions only.
 - Added private functions to handle existing certs and secrets.
