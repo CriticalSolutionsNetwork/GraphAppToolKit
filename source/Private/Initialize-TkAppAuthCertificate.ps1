@@ -1,39 +1,28 @@
+
 <#
     .SYNOPSIS
-        Retrieves or creates a self-signed certificate in the specified store.
+    Initializes or retrieves an authentication certificate for the TkApp.
     .DESCRIPTION
-        The Initialize-TkAppAuthCertificate function either retrieves a certificate by thumbprint from
-        the specified store or creates a new self-signed certificate if no thumbprint is provided.
-        It returns a PSCustomObject containing the certificate's thumbprint, expiration date,
-        and an optional AppName (to maintain compatibility with existing usage).
+    The Initialize-TkAppAuthCertificate function either retrieves an existing certificate by thumbprint or creates a new self-signed certificate if no thumbprint is provided. The function logs the process and supports ShouldProcess for confirmation prompts.
     .PARAMETER Thumbprint
-        The thumbprint of the certificate to retrieve. If omitted, a new self-signed certificate
-        is created.
+    The thumbprint of the certificate to retrieve. If omitted, a new self-signed certificate is created.
     .PARAMETER AppName
-        An optional name for the application or usage context of this certificate.
-        This is used to populate the "AppName" property in the returned object if needed.
+    An optional name to store in the output object (e.g., the associated app name).
     .PARAMETER Subject
-        The certificate subject, for example: "CN=MyNewAppCert". Defaults to "CN=DefaultSelfSignedCert"
-        if no thumbprint is provided.
+    The subject name for the new certificate if no thumbprint is provided. Default is 'CN=TkDefaultSelfSignedCert'.
     .PARAMETER CertStoreLocation
-        The certificate store path (e.g., "Cert:\CurrentUser\My" or "Cert:\LocalMachine\My").
-        Defaults to "Cert:\CurrentUser\My".
-    .EXAMPLE
-        # Retrieve an existing cert by thumbprint
-        Initialize-TkAppAuthCertificate -Thumbprint "9B8B40C5F148B710AD5C0E5CC8D0B71B5A30DB0C"
-    .EXAMPLE
-        # Create a new self-signed cert for a specific application name
-        Initialize-TkAppAuthCertificate -AppName "MyGraphApp" -Subject "CN=MyGraphAppCert"
-        Returns an object containing AppName, CertThumbprint, and expiration info.
+    The certificate store location (e.g., "Cert:\CurrentUser\My"). Default is 'Cert:\CurrentUser\My'.
+    .PARAMETER KeyExportPolicy
+    Exportable key policy for the new certificate. Valid values are 'Exportable' and 'NonExportable'. Default is 'NonExportable'.
     .OUTPUTS
-        PSCustomObject with:
-            - CertThumbprint
-            - CertExpires
-            - AppName      (if provided)
+    PSCustomObject
+    An object containing the certificate thumbprint and expiration date. If AppName is provided, it is included in the output object.
+    .EXAMPLE
+    Initialize-TkAppAuthCertificate -Thumbprint 'ABC123DEF456'
+    .EXAMPLE
+    Initialize-TkAppAuthCertificate -Subject 'CN=MyAppCert' -AppName 'MyApp'
     .NOTES
-        Author: DrIOSx
-        Requires: Write-AuditLog
-        The user must have permission to create or retrieve certificates from the specified store.
+    This function requires the user to have appropriate permissions to access the certificate store and create certificates.
 #>
 function Initialize-TkAppAuthCertificate {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
@@ -88,7 +77,12 @@ function Initialize-TkAppAuthCertificate {
         }
         else {
             # Prompt before creating a new certificate
-            if ($PSCmdlet.ShouldProcess($Subject, "Create new self-signed certificate in $CertStoreLocation")) {
+            $shouldProcessTarget = "'Subject:$Subject' in $CertStoreLocation"
+            $shouldProcessOperation = 'New-SelfSignedCertificate'
+            if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
+                Get-TkExistingCert `
+                -CertName $Subject `
+                -ErrorAction Stop
                 $Cert = New-SelfSignedCertificate -Subject $Subject -CertStoreLocation $CertStoreLocation `
                     -KeyExportPolicy $KeyExportPolicy -KeySpec Signature -KeyLength 2048 -KeyAlgorithm RSA -HashAlgorithm SHA256
                 Write-AuditLog "Created new self-signed certificate with subject '$Subject' in $CertStoreLocation."

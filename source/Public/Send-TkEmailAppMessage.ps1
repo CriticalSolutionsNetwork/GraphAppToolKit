@@ -38,6 +38,9 @@
         The body text of the email.
     .PARAMETER AttachmentPath
         An array of file paths for any attachments to include in the email. Each path must exist as a leaf file.
+    .PARAMETER VaultName
+        [Vault Parameter Set Only]
+        The name of the vault to retrieve the GraphEmailApp object. Default is 'GraphEmailAppLocalStore'.
     .EXAMPLE
         # Using the 'Vault' parameter set
         Send-TkEmailAppMessage -AppName "GraphEmailApp" -To "recipient@example.com" -FromAddress "sender@example.com" `
@@ -59,7 +62,7 @@
             via Microsoft Graph.
 #>
 function Send-TkEmailAppMessage {
-    [CmdletBinding(DefaultParameterSetName = 'Vault')]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium', DefaultParameterSetName = 'Vault')]
     param(
         # Use the vault-based approach (default)
         [Parameter(
@@ -163,7 +166,14 @@ function Send-TkEmailAppMessage {
         [ValidateNotNullOrEmpty()]
         [ValidateScript({ Test-Path $_ -PathType 'Leaf' })]
         [string[]]
-        $AttachmentPath
+        $AttachmentPath,
+        [Parameter(
+            Mandatory = $false,
+            ParameterSetName = 'Vault',
+            HelpMessage = 'Vault name to retrieve the GraphEmailApp object.'
+        )]
+        [string]
+        $VaultName = 'GraphEmailAppLocalStore'
     )
     begin {
         if (!($script:LogString)) {
@@ -187,12 +197,14 @@ function Send-TkEmailAppMessage {
         # If manual parameter set:
         if ($PSCmdlet.ParameterSetName -eq 'Manual') {
             $cert = Get-ChildItem -Path Cert:\CurrentUser\My | Where-Object { $_.Thumbprint -eq $CertThumbprint } -ErrorAction Stop
+            # TODO Confirm this object is not needed elsewhere
             $GraphEmailApp = @{
                 AppId          = $AppId
                 CertThumbprint = $CertThumbprint
                 TenantID       = $TenantId
                 CertExpires    = $cert.NotAfter
             }
+            $Tenant = $TenantId
         }
         elseif ($PSCmdlet.ParameterSetName -eq 'Vault') {
             # If a GraphEmailApp object was not passed in, attempt to retrieve it from the local machine
@@ -200,7 +212,7 @@ function Send-TkEmailAppMessage {
                 try {
                     # Step 7:
                     # Define the application Name and Encrypted File Paths.
-                    $Auth = Get-Secret -Name "$AppName" -Vault GraphEmailAppLocalStore -AsPlainText -ErrorAction Stop
+                    $Auth = Get-Secret -Name "CN=$AppName" -Vault $VaultName -AsPlainText -ErrorAction Stop
                     $authObj = $Auth | ConvertFrom-Json
                     $GraphEmailApp = $authObj
                     $AppId = $GraphEmailApp.AppId
@@ -229,7 +241,11 @@ function Send-TkEmailAppMessage {
     } # End Region Begin
     Process {
         # Authenticate with Azure AD and obtain an access token for the Microsoft Graph API using the certificate
-        $MSToken = Get-MsalToken -ClientCertificate $Cert -ClientId $AppId -Authority "https://login.microsoftonline.com/$Tenant/oauth2/v2.0/token" -ErrorAction Stop
+        $MSToken = Get-MsalToken `
+            -ClientCertificate $Cert `
+            -ClientId $AppId `
+            -Authority "https://login.microsoftonline.com/$Tenant/oauth2/v2.0/token" `
+            -ErrorAction Stop
         # Set up the request headers
         $authHeader = @{Authorization = "Bearer $($MSToken.AccessToken)" }
         # Set up the request URL
@@ -280,10 +296,14 @@ function Send-TkEmailAppMessage {
         try {
             # Send the email message using the Invoke-RestMethod cmdlet
             Write-AuditLog 'Sending email via Microsoft Graph.'
-            [void](Invoke-RestMethod -Headers $authHeader -Uri $url -Body $body -Method POST -ContentType 'application/json' -ErrorAction Stop)
             Write-AuditLog "To                  : $To"
             Write-AuditLog "From                : $FromAddress"
-            Write-AuditLog "Attachments Sent    : $(($Message.message.attachments).Count)"
+            Write-AuditLog "Attachments To Send : $(($Message.message.attachments).Count)"
+            $shouldProcessOperation = 'Send-TkEmailAppMessage'
+            $shouldProcessTarget = "Sender: $FromAddress, Recipient: $To Attachments: $(($Message.message.attachments).Count)"
+            if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
+                [void](Invoke-RestMethod -Headers $authHeader -Uri $url -Body $body -Method POST -ContentType 'application/json' -ErrorAction Stop)
+            }
             Write-AuditLog -EndFunction
         }
         catch {

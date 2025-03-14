@@ -180,10 +180,6 @@ function Write-AuditLog {
             switch ($Severity) {
                 'Warning' {
                     Write-Warning ('[WARNING] ! ' + $Message)
-                    $UserInput = Read-Host 'Warning encountered! Do you want to continue? (Y/N)'
-                    if ($UserInput -eq 'N') {
-                        throw 'Script execution stopped by user.'
-                    }
                 }
                 'Error' { Write-Error ('[ERROR] X - ' + "[$((Get-Date).ToString('yyyy.MM.dd HH:mm:ss.fff'))] " + $FuncName + ' ' + $Message) -ErrorAction Continue }
                 'Verbose' { Write-Verbose ('~ ' + "[$((Get-Date).ToString('yyyy.MM.dd HH:mm:ss.fff'))] " + $Message) }

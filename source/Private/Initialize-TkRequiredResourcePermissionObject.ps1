@@ -1,4 +1,24 @@
-function New-TkRequiredResourcePermissionObject {
+<#
+    .SYNOPSIS
+    Creates a new required resource permission object for Microsoft Graph and specific scenarios.
+    .DESCRIPTION
+    The Initialize-TkRequiredResourcePermissionObject function creates a new required resource permission object for Microsoft Graph and specific scenarios. It retrieves service principals by display name, builds an array of MicrosoftGraphRequiredResourceAccess objects, and processes application permissions and scenario-specific permissions.
+    .PARAMETER GraphPermissions
+    An array of application (app-only) permissions for Microsoft Graph. Default is 'Mail.Send'.
+    .PARAMETER Scenario
+    The scenario app version. Currently supports '365Audit'.
+    .EXAMPLE
+    PS C:\> Initialize-TkRequiredResourcePermissionObject -GraphPermissions 'User.Read', 'Mail.Send'
+
+    Creates a required resource permission object with the specified Graph permissions.
+    .EXAMPLE
+    PS C:\> Initialize-TkRequiredResourcePermissionObject -Scenario '365Audit'
+
+    Creates a required resource permission object for the '365Audit' scenario, including specific SharePoint and Exchange permissions.
+    .NOTES
+    This function requires the Microsoft.Graph PowerShell module.
+#>
+function Initialize-TkRequiredResourcePermissionObject {
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param (
         [Parameter(
@@ -27,7 +47,7 @@ function New-TkRequiredResourcePermissionObject {
             Write-AuditLog '###############################################'
             ## 1) Retrieve service principals by DisplayName
             Write-AuditLog 'Looking up service principals by display name...'
-            $spGraph = Get-MgServicePrincipal -Filter "DisplayName eq 'Microsoft Graph'"
+            $spGraph = Get-MgServicePrincipal -Filter "DisplayName eq 'Microsoft Graph'" -ErrorAction Stop
             # 2) Build an array of [MicrosoftGraphRequiredResourceAccess] objects
             $requiredResourceAccessList = @()
             # Retrieve all application permissions

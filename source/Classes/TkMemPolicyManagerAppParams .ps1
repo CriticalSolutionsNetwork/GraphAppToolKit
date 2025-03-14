@@ -2,7 +2,7 @@ class TkMemPolicyManagerAppParams  {
     [string]$AppId
     [string]$AppName
     [string]$CertThumbprint
-    [string]$ClientId
+    [string]$ObjectId
     [string]$ConsentUrl
     [string]$PermissionSet
     [string]$Permissions
@@ -12,7 +12,7 @@ class TkMemPolicyManagerAppParams  {
         [string]$AppId,
         [string]$AppName,
         [string]$CertThumbprint,
-        [string]$ClientId,
+        [string]$ObjectId,
         [string]$ConsentUrl,
         [string]$PermissionSet,
         [string]$Permissions,
@@ -21,7 +21,7 @@ class TkMemPolicyManagerAppParams  {
         $this.AppId          = $AppId
         $this.AppName        = $AppName
         $this.CertThumbprint = $CertThumbprint
-        $this.ClientId       = $ClientId
+        $this.ObjectId       = $ObjectId
         $this.ConsentUrl     = $ConsentUrl
         $this.PermissionSet  = $PermissionSet
         $this.Permissions    = $Permissions

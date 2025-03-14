@@ -1,11 +1,44 @@
+<#
+    .SYNOPSIS
+    Connects to Microsoft Graph and/or Exchange Online services.
+    .DESCRIPTION
+    The Connect-TkMsService function establishes a connection to Microsoft Graph and/or Exchange Online services.
+    It checks for existing sessions and reuses them if valid, otherwise, it creates new sessions.
+    The function supports logging and provides detailed information about the connection process.
+    .PARAMETER MgGraph
+    Switch parameter to indicate if a connection to Microsoft Graph should be established.
+    .PARAMETER GraphAuthScopes
+    Array of strings specifying the scopes required for Microsoft Graph authentication.
+    .PARAMETER ExchangeOnline
+    Switch parameter to indicate if a connection to Exchange Online should be established.
+    .EXAMPLE
+    Connect-TkMsService -MgGraph -GraphAuthScopes @('User.Read', 'Mail.Read')
+
+    This example connects to Microsoft Graph with the specified scopes.
+    .EXAMPLE
+    Connect-TkMsService -ExchangeOnline
+
+    This example connects to Exchange Online.
+    .EXAMPLE
+    Connect-TkMsService -MgGraph -GraphAuthScopes @('User.Read', 'Mail.Read') -ExchangeOnline
+
+    This example connects to both Microsoft Graph and Exchange Online.
+    .NOTES
+    This function requires the Microsoft.Graph and ExchangeOnlineManagement modules to be installed and imported.
+#>
 function Connect-TkMsService {
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     param (
         [Parameter(
             HelpMessage = 'Connect to Microsoft Graph.'
         )]
         [Switch]
         $MgGraph,
+        [Parameter(
+            HelpMessage = 'Graph Scopes.'
+        )]
+        [String[]]
+        $GraphAuthScopes,
         [Parameter(
             HelpMessage = 'Connect to Exchange Online.'
         )]
@@ -24,10 +57,9 @@ function Connect-TkMsService {
     # Section 1: Microsoft Graph
     #----------------------------------------------
     if ($MgGraph) {
-        if ($PSCmdlet.ShouldProcess(
-                'Microsoft Graph',
-                'Connecting with scopes: Application.ReadWrite.All, DelegatedPermissionGrant.ReadWrite.All, Directory.ReadWrite.All, RoleManagement.ReadWrite.Directory'
-            )) {
+        $shouldProcessTarget = $GraphAuthScopes -join ', '
+        $shouldProcessOperation = 'Connect-MgGraph'
+        if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
             try {
                 # 1) Attempt to see if we have a valid Graph session
                 $graphIsValid = $false
@@ -36,12 +68,15 @@ function Connect-TkMsService {
                     Get-MgUser -Top 1 -ErrorAction Stop | Out-Null
                     $ContextMg = Get-MgContext -ErrorAction Stop
                     # Check required scopes
-                    $scopesNeeded = @(
-                        'Application.ReadWrite.All',
-                        'DelegatedPermissionGrant.ReadWrite.All',
-                        'Directory.ReadWrite.All',
-                        'RoleManagement.ReadWrite.Directory'
-                    )
+                    <#
+                        $scopesNeeded = @(
+                            'Application.ReadWrite.All',
+                            'DelegatedPermissionGrant.ReadWrite.All',
+                            'Directory.ReadWrite.All',
+                            'RoleManagement.ReadWrite.Directory'
+                        )
+                    #>
+                    $scopesNeeded = $GraphAuthScopes
                     $missing = $scopesNeeded | Where-Object { $ContextMg.Scopes -notcontains $_ }
                     if ($missing) {
                         Write-AuditLog "The following needed scopes are missing: $($missing -join ', ')"
@@ -57,19 +92,17 @@ function Connect-TkMsService {
                 }
                 # 2) If valid session, ask user if they want to reuse it
                 if ($graphIsValid) {
-                    $null = $useExisting = Read-Host 'Do you want to use the existing Microsoft Graph session? (Y/N)'
-                    if ($useExisting -match '^[Yy]') {
+                    $org = Get-MgOrganization -ErrorAction Stop
+                    $shouldProcessTarget = 'Microsoft Graph'
+                    $shouldProcessOperation = "Use existing session for Account: $($ContextMg.Account) Tenant: $($org.DisplayName) AuthType: $($ContextMg.AuthType)"
+                    if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
                         Write-AuditLog 'Using existing Microsoft Graph session.'
                     }
                     else {
                         # Remove the old context so we can connect fresh
                         Remove-MgContext -ErrorAction SilentlyContinue
                         Write-AuditLog 'Creating a new Microsoft Graph session.'
-                        Connect-MgGraph -Scopes `
-                            'Application.ReadWrite.All', `
-                            'DelegatedPermissionGrant.ReadWrite.All', `
-                            'Directory.ReadWrite.All', `
-                            'RoleManagement.ReadWrite.Directory' `
+                        Connect-MgGraph -Scopes $scopesNeeded `
                             -ErrorAction Stop
                         Write-AuditLog 'Connected to Microsoft Graph.'
                     }
@@ -77,11 +110,7 @@ function Connect-TkMsService {
                 else {
                     # No valid session, so just connect
                     Write-AuditLog 'No valid Microsoft Graph session found. Connecting...'
-                    Connect-MgGraph -Scopes `
-                        'Application.ReadWrite.All', `
-                        'DelegatedPermissionGrant.ReadWrite.All', `
-                        'Directory.ReadWrite.All', `
-                        'RoleManagement.ReadWrite.Directory' `
+                    Connect-MgGraph -Scopes $scopesNeeded `
                         -ErrorAction Stop
                     Write-AuditLog 'Connected to Microsoft Graph.'
                 }
@@ -96,15 +125,14 @@ function Connect-TkMsService {
     # Section 2: Exchange Online
     #----------------------------------------------
     if ($ExchangeOnline) {
-        if ($PSCmdlet.ShouldProcess(
-                'Exchange Online',
-                'Connecting to ExchangeOnline using modern authentication pop-up.'
-            )) {
+        $shouldProcessTarget = 'Connecting to Exchange Online using modern authentication pop-up.'
+        $shouldProcessOperation = 'Connect-ExchangeOnline'
+        if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
             try {
                 # 1) Attempt to see if we have a valid Exchange session
                 $exoIsValid = $false
                 try {
-                    $Org = (Get-OrganizationConfig -ErrorAction Stop).Identity
+                    $ExoOrg = Get-OrganizationConfig -ErrorAction Stop
                     $exoIsValid = $true
                 }
                 catch {
@@ -114,9 +142,10 @@ function Connect-TkMsService {
                 # 2) If valid session, ask user if they want to reuse it
                 if ($exoIsValid) {
                     Write-AuditLog 'An active Exchange Online session is detected.'
-                    Write-AuditLog "Tenant: `n$Org`n"
-                    $null = $useExisting = Read-Host 'Do you want to use the existing Exchange Online session? (Y/N)'
-                    if ($useExisting -match '^[Yy]') {
+                    Write-AuditLog "Tenant: `n$($ExoOrg.DisplayName)`n"
+                    $shouldProcessTarget = 'ExchangeOnline'
+                    $shouldProcessOperation = "Use existing session for Org: $($ExoOrg.DisplayName) OnMicrosoftId: $($ExoOrg.Name )"
+                    if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
                         Write-AuditLog 'Using existing Exchange Online session.'
                     }
                     else {

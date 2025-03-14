@@ -8,18 +8,43 @@ $ProjectName = ((Get-ChildItem -Path $ProjectPath\*\*.psd1).Where{
 Import-Module $ProjectName
 
 InModuleScope $ProjectName {
-    Describe Get-PrivateFunction {
-        Context 'Default' {
-            BeforeEach {
-                $return = Get-PrivateFunction -PrivateData 'string'
+    Describe "New-TkAppRegistration" {
+        Mock -CommandName Get-ChildItem -MockWith {
+            param ($Path)
+            return @{
+                Thumbprint = "ABC123"
+                RawData = "MockedRawData"
             }
-
-            It 'Returns a single object' {
-                ($return | Measure-Object).Count | Should -Be 1
+        }
+        Mock -CommandName New-MgApplication -MockWith {
+            param ($Params)
+            return @{
+                Id = "MockedAppId"
             }
-
-            It 'Returns a string based on the parameter PrivateData' {
-                $return | Should -Be 'string'
+        }
+        Mock -CommandName Write-AuditLog
+        Context "When creating a new app registration" {
+            It "Should create a new app registration with valid parameters" {
+                $DisplayName = "MyApp"
+                $CertThumbprint = "ABC123"
+                $Notes = "This is a sample app."
+                $AppRegistration = New-TkAppRegistration -DisplayName $DisplayName -CertThumbprint $CertThumbprint -Notes $Notes
+                $AppRegistration.Id | Should -Be "MockedAppId"
+                Assert-MockCalled -CommandName Get-ChildItem -Exactly 1 -Scope It
+                Assert-MockCalled -CommandName New-MgApplication -Exactly 1 -Scope It
+            }
+            It "Should throw an error if the certificate is not found" {
+                Mock -CommandName Get-ChildItem -MockWith {
+                    param ($Path)
+                    return $null
+                }
+                $DisplayName = "MyApp"
+                $CertThumbprint = "INVALID"
+                { New-TkAppRegistration -DisplayName $DisplayName -CertThumbprint $CertThumbprint } | Should -Throw "Certificate with thumbprint INVALID not found in Cert:\CurrentUser\My."
+            }
+            It "Should throw an error if CertThumbprint is not provided" {
+                $DisplayName = "MyApp"
+                { New-TkAppRegistration -DisplayName $DisplayName } | Should -Throw "CertThumbprint is required to create an app registration. No other methods are supported yet."
             }
         }
     }

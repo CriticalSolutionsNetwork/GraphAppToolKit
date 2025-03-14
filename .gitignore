@@ -4,7 +4,7 @@ output/
 *.local.*
 !**/README.md
 .kitchen/
-
+/scripts/
 *.nupkg
 *.suo
 *.user
@@ -16,3 +16,5 @@ markdownissues.txt
 node_modules
 package-lock.json
 ZZBuild-Help.ps1
+test1.ps1
+helpdoc.ps1

@@ -16,14 +16,15 @@ or by specifying them manually.
 ### Vault (Default)
 ```
 Send-TkEmailAppMessage -AppName <String> -To <String> -FromAddress <String> -Subject <String>
- -EmailBody <String> [-AttachmentPath <String[]>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ -EmailBody <String> [-AttachmentPath <String[]>] [-VaultName <String>] [-ProgressAction <ActionPreference>]
+ [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### Manual
 ```
 Send-TkEmailAppMessage -AppId <String> -TenantId <String> -CertThumbprint <String> -To <String>
  -FromAddress <String> -Subject <String> -EmailBody <String> [-AttachmentPath <String[]>]
- [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -207,6 +208,52 @@ Each path must exist as a leaf file.
 Type: String[]
 Parameter Sets: (All)
 Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -VaultName
+[Vault Parameter Set Only]
+The name of the vault to retrieve the GraphEmailApp object. Default is 'GraphEmailAppLocalStore'.
+
+```yaml
+Type: String
+Parameter Sets: Vault
+Aliases:
+
+Required: False
+Position: Named
+Default value: GraphEmailAppLocalStore
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WhatIf
+Shows what would happen if the cmdlet runs. The cmdlet is not run.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: wi
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Confirm
+Prompts you for confirmation before running the cmdlet.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: cf
 
 Required: False
 Position: Named
