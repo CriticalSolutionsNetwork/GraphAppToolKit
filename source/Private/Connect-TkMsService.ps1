@@ -132,7 +132,7 @@ function Connect-TkMsService {
                 # 1) Attempt to see if we have a valid Exchange session
                 $exoIsValid = $false
                 try {
-                    $Org = (Get-OrganizationConfig -ErrorAction Stop).Identity
+                    $ExoOrg = Get-OrganizationConfig -ErrorAction Stop
                     $exoIsValid = $true
                 }
                 catch {
@@ -142,9 +142,9 @@ function Connect-TkMsService {
                 # 2) If valid session, ask user if they want to reuse it
                 if ($exoIsValid) {
                     Write-AuditLog 'An active Exchange Online session is detected.'
-                    Write-AuditLog "Tenant: `n$($Org.DisplayName)`n"
+                    Write-AuditLog "Tenant: `n$($ExoOrg.DisplayName)`n"
                     $shouldProcessTarget = 'ExchangeOnline'
-                    $shouldProcessOperation = "Use existing session for Org: $($Org.DisplayName) OnMicrosoftId: $($Org.Identity)"
+                    $shouldProcessOperation = "Use existing session for Org: $($ExoOrg.DisplayName) OnMicrosoftId: $($ExoOrg.Identity)"
                     if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
                         Write-AuditLog 'Using existing Exchange Online session.'
                     }
