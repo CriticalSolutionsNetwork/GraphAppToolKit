@@ -10,12 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added cert options to the GraphAppToolkit send email.
 - Updated auth methods to invoke needed permissions only.
 - Added private functions to handle existing certs and secrets.
+- Added support for -WhatIf and -Confirm parameters to cmdlets.
+- Renamed private function "New-TkAppName" to "Initialize-TkAppName".
+- Renamed private function "New-TkRequiredResourcePermissionObject" to "Initialize-TkRequiredResourcePermissionObject".
+- Updated documentation across the module (README.md, help XML files, and about_GraphAppToolkit.help.txt).
+- Enhanced logging in private functions for improved auditability.
 
 ### Fixed
 
 - Fixed formatting.
 - Manual app call for sending email.
 - Confirm to high for connect function.
+- Corrected parameter block formatting and alignment issues in multiple cmdlets.
 
 ## [0.1.2] - 2025-03-11
 
