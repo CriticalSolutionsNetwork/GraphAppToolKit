@@ -29,7 +29,7 @@ class TkEmailAppParams {
         $this.AppId                  = $AppId
         $this.Id                     = $Id
         $this.AppName                = $AppName
-        $this.ClientCertName         = $CertificateSubject
+        $this.CertificateSubject     = $CertificateSubject
         $this.AppRestrictedSendGroup = $AppRestrictedSendGroup
         $this.CertExpires            = $CertExpires
         $this.CertThumbprint         = $CertThumbprint
