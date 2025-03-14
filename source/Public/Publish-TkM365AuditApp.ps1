@@ -24,6 +24,8 @@
     .PARAMETER ReturnParamSplat
         If specified, returns a parameter splat string for use in other functions, instead of the
         default PSCustomObject containing the app details.
+    .PARAMETER DoNotUseDomainSuffix
+        If specified, does not append the domain suffix to the app name.
     .EXAMPLE
         PS C:\> Publish-TkM365AuditApp -AppPrefix "CS12" -ReturnParamSplat
         Creates a new M365 Audit App with the prefix "CS12", returns a parameter splat, and stores
@@ -90,7 +92,13 @@ function Publish-TkM365AuditApp {
             HelpMessage = `
                 'Return output as a parameter splat string for use in other functions.'
         )]
-        [switch]$ReturnParamSplat
+        [switch]$ReturnParamSplat,
+        [Parameter(
+            Mandatory = $false,
+            HelpMessage = `
+                'If specified, do not append the domain suffix to the app name.'
+        )]
+        [switch]$DoNotUseDomainSuffix
     )
     begin {
         if (-not $script:LogString) {
@@ -147,6 +155,7 @@ function Publish-TkM365AuditApp {
             $appName = Initialize-TkAppName `
                 -Prefix $AppPrefix `
                 -ScenarioName 'M365Audit' `
+                -DoNotUseDomainSuffix:$DoNotUseDomainSuffix `
                 -ErrorAction Stop
             Write-AuditLog "Proposed new M365 Audit App name: $appName"
             # Retrieve or create the certificate

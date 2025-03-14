@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed private function "New-TkRequiredResourcePermissionObject" to "Initialize-TkRequiredResourcePermissionObject".
 - Updated documentation across the module (README.md, help XML files, and about_GraphAppToolkit.help.txt).
 - Enhanced logging in private functions for improved auditability.
+- Switch parameter for removing domain suffix from the app name.
 
 ### Fixed
 

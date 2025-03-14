@@ -45,7 +45,13 @@ function Initialize-TkAppName {
         )]
         [ValidatePattern('^[\w-\.]+@([\w-]+\.)+[\w-]{2,}$')]
         [string]
-        $UserId
+        $UserId,
+        [Parameter(
+            Mandatory=$false,
+            HelpMessage='Switch to add session domain suffix to the app name.'
+        )]
+        [switch]
+        $DoNotUseDomainSuffix
     )
     begin {
         if (-not $script:LogString) { Write-AuditLog -Start } else { Write-AuditLog -BeginFunction }
@@ -60,11 +66,11 @@ function Initialize-TkAppName {
                 $userPrefix = ($UserId.Split('@')[0])
                 $userSuffix = "-As-$userPrefix"
             }
-            # Example final: GraphToolKit-MSN-GraphApp-MyDomain-As-helpDesk
-            $domainSuffix = $env:USERDNSDOMAIN
-            if (-not $domainSuffix) {
-                # fallback if not set
+            if ($DoNotUseDomainSuffix) {
                 $domainSuffix = "MyDomain"
+            }
+            else {
+                $domainSuffix = $env:USERDNSDOMAIN
             }
             $appName = "GraphToolKit-$Prefix"
             Write-AuditLog "Returning app name: $appName (Prefix: $Prefix, Scenario: $ScenarioName, User Suffix: $userSuffix)"

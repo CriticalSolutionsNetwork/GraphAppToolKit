@@ -25,6 +25,8 @@
     .PARAMETER ReturnParamSplat
         If specified, returns a parameter splat string for use in other functions. Otherwise, returns
         a PSCustomObject containing the app details.
+    .PARAMETER DoNotUseDomainSuffix
+        If specified, the function does not append the domain suffix to the app name.
     .EXAMPLE
         PS C:\> Publish-TkMemPolicyManagerApp -AppPrefix "CORP" -ReadWrite
         Creates a new MEM Policy Manager App with read-write permissions, retrieves or
@@ -97,7 +99,14 @@ function Publish-TkMemPolicyManagerApp {
             HelpMessage = `
                 'Return the param splat for use in other functions.'
         )]
-        [switch]$ReturnParamSplat
+        [switch]$ReturnParamSplat,
+        [Parameter(
+            Mandatory = $false,
+            HelpMessage = `
+                'If specified, do not append the domain suffix to the app name.'
+        )]
+        [switch]
+        $DoNotUseDomainSuffix
     )
     begin {
         if (-not $script:LogString) {
@@ -163,6 +172,7 @@ function Publish-TkMemPolicyManagerApp {
             $appName = Initialize-TkAppName `
                 -Prefix $AppPrefix `
                 -ScenarioName 'MemPolicyManager' `
+                -DoNotUseDomainSuffix:$DoNotUseDomainSuffix `
                 -ErrorAction Stop
             # 4) Add TenantId & AppName to the object so we can store them in the final JSON
             $AppSettings | Add-Member -NotePropertyName 'TenantId' -NotePropertyValue $Context.TenantId

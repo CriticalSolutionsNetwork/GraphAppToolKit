@@ -25,6 +25,8 @@
         If specified, overwrite the vault secret if it already exists.
     .PARAMETER ReturnParamSplat
         If specified, return the parameter splat for use in other functions.
+    .PARAMETER DoNotUseDomainSuffix
+        Switch to add session domain suffix to the app name.
     .EXAMPLE
         Publish-TkEmailApp -AppPrefix 'Gtk' -AuthorizedSenderUserName 'user@example.com' -MailEnabledSendingGroup 'group@example.com'
 
@@ -134,7 +136,14 @@ function Publish-TkEmailApp {
                 'Return the parameter splat for use in other functions.'
         )]
         [switch]
-        $ReturnParamSplat
+        $ReturnParamSplat,
+        [Parameter(
+            Mandatory = $false,
+            HelpMessage = `
+                'Switch to add session domain suffix to the app name.'
+        )]
+        [switch]
+        $DoNotUseDomainSuffix
     )
     begin {
         <#
@@ -203,7 +212,9 @@ function Publish-TkEmailApp {
                 $appName = Initialize-TkAppName `
                     -Prefix $AppPrefix `
                     -ScenarioName 'AuditGraphEmail' `
-                    -UserId $AuthorizedSenderUserName
+                    -UserId $AuthorizedSenderUserName `
+                    -DoNotUseDomainSuffix:$DoNotUseDomainSuffix `
+                    -ErrorAction Stop
                 # Verify if the secret already exists in the vault
                 $existingSecret = Get-TkExistingSecret `
                     -AppName $appName `
