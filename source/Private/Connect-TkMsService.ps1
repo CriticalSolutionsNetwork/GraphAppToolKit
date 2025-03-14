@@ -94,7 +94,7 @@ function Connect-TkMsService {
                 if ($graphIsValid) {
                     $org = Get-MgOrganization -ErrorAction Stop
                     $shouldProcessTarget = 'Microsoft Graph'
-                    $shouldProcessOperation = "Use existing session for Account: $($context.Account) Tenant: $($org.DisplayName) AuthType: $($context.AuthType)"
+                    $shouldProcessOperation = "Use existing session for Account: $($ContextMg.Account) Tenant: $($org.DisplayName) AuthType: $($ContextMg.AuthType)"
                     if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
                         Write-AuditLog 'Using existing Microsoft Graph session.'
                     }
