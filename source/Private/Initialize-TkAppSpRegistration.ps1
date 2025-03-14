@@ -162,14 +162,14 @@ function Initialize-TkAppSpRegistration {
                 + $Context.TenantId `
                 + '/adminconsent?client_id=' `
                 + $AppRegistration.AppId
-            Write-Verbose 'Please go to the following URL in your browser to provide admin consent:`n' -Verbose
-            Write-AuditLog "`n$adminConsentUrl`n" -Severity information
+            Write-Verbose 'Please go to the following URL in your browser to provide admin consent:' -Verbose
+            Write-AuditLog "`n`n$adminConsentUrl`n" -Severity information
             # For each end
-            Write-Verbose 'After providing admin consent, you can use the following command for certificate-based auth:`n' -Verbose
+            Write-Verbose 'After providing admin consent, you can use the following command for certificate-based auth:' -Verbose
             if ($AuthMethod -eq 'Certificate') {
                 $connectGraph = 'Connect-MgGraph -ClientId "' + $AppRegistration.AppId + '" -TenantId "' +
                 $Context.TenantId + '" -CertificateName "' + $Cert.SubjectName.Name + '"'
-                Write-AuditLog "`n$connectGraph`n" -Severity Information
+                Write-AuditLog "`n`n$connectGraph`n" -Severity Information
             }
             else {
                 # Placeholder for other auth methods

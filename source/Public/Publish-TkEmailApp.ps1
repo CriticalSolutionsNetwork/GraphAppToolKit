@@ -412,7 +412,8 @@ function Publish-TkEmailApp {
                     $EmailAppParams = @{
                         AppId                  = $existingApp.AppId
                         Id                     = $existingApp.Id
-                        AppName                = "CN=$updatedString"
+                        AppName                = "$updatedString"
+                        CertificateSubject     = "CN=$updatedString"
                         AppRestrictedSendGroup = $notesObject.RestrictedToGroup
                         CertExpires            = $CertDetails.CertExpires
                         CertThumbprint         = $CertDetails.CertThumbprint

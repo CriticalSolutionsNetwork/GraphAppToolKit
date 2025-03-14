@@ -16,7 +16,7 @@
     Version: 1.0
 #>
 function Get-TkExistingCert {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     param (
         [Parameter(Mandatory = $true)]
         [string]$CertName
@@ -31,8 +31,18 @@ function Get-TkExistingCert {
         Write-AuditLog "Get-ChildItem -Path Cert:\CurrentUser\My | Where-Object { `$_.Subject -eq '$CertName' }"
         Write-AuditLog '2. If you are comfortable removing the old certificate, and any duplicates, run the following command:'
         Write-AuditLog "Get-ChildItem -Path Cert:\CurrentUser\My | Where-Object { `$_.Subject -eq '$CertName' } | Remove-Item"
+        Write-AuditLog "If you would like to remove the certificate, confirm the operation when prompted."
+        $shouldProcessOperation = 'Remove-Item'
+        $shouldProcessTarget = "Certificate with subject '$CertName' with thumbprint $($ExistingCert.Thumbprint)"
+        if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
+            Get-ChildItem -Path Cert:\CurrentUser\My | Where-Object { $_.Subject -eq $CertName } -ErrorAction Stop | Remove-Item
+            Write-AuditLog "Certificate with subject '$CertName' removed."
+        }
+        else {
+            Write-AuditLog "Certificate with subject '$CertName' not removed."
+            throw "Certificate with subject '$CertName' was not removed by user."
+        }
         $VerbosePreference = 'SilentlyContinue'
-        throw "Certificate with subject '$CertName' already exists in the certificate store."
     }
     else {
         Write-AuditLog "Certificate with subject '$CertName' does not exist in the certificate store. Continuing..."
