@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Switch parameter for removing domain suffix from the app name.
 - Certificate subject to param splat export.
 - Permissions to comment based help.
+- Initial test cases structure for Pester with rudimentary tests.
 
 ### Fixed
 
