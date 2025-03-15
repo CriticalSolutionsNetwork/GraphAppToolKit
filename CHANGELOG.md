@@ -5,13 +5,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added Get-TkMsalToken cmdlet to retrieve an MSAL token using API calls.
+
 ### Fixed
 
-- Fixed authentication context for mggraph.
+- Fixed authentication context for MgGraph.
 
 ### Changed
 
 - Updated private function names to be more descriptive.
+- Removed MSAL.PS dependency from Send-TkEmailAppMessage function.
 
 ## [0.2.0] - 2025-03-14
 
