@@ -10,7 +10,6 @@ The **GraphAppToolkit** module provides a set of functions and classes to quickl
 - Microsoft.Graph
 - Microsoft.PowerShell.SecretManagement
 - SecretManagement.JustinGrote.CredMan
-- MSAL.PS
 
 ### Requirements
 
