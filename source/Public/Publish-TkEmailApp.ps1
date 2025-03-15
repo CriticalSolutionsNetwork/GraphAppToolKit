@@ -360,7 +360,7 @@ function Publish-TkEmailApp {
                         CertThumbprint             = $CertDetails.CertThumbprint
                         ErrorAction                = 'Stop'
                     }
-                    $ConsentUrl = Initialize-TkAppSpRegistration @AppSpRegistrationParams
+                    $ConsentUrl = New-TkAppSpOauth2Registration @AppSpRegistrationParams
                     [void](Read-Host 'Provide admin consent now, or copy the url and provide admin consent later. Press Enter to continue.')
                     # 8) Create the Exchange Online policy restricting send
                     New-TkExchangeEmailAppPolicy `

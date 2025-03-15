@@ -230,7 +230,7 @@ function Publish-TkM365AuditApp {
                 CertThumbprint             = $CertDetails.CertThumbprint
                 ErrorAction                = 'Stop'
             }
-            $ConsentUrl = Initialize-TkAppSpRegistration @AppSpRegistrationParams
+            $ConsentUrl = New-TkAppSpOauth2Registration @AppSpRegistrationParams
             [void](Read-Host 'Provide admin consent now, or copy the url and provide admin consent later. Press Enter to continue.')
             Write-AuditLog 'Appending Exchange Administrator role to the app.'
             $exoAdminRole = Get-MgDirectoryRole -Filter "displayName eq 'Exchange Administrator'" -ErrorAction Stop

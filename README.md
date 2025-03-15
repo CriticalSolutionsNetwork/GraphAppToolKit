@@ -108,7 +108,7 @@ The following Private Functions support the module’s internal processes and ar
 - **Connect-TkMsService**
 - **ConvertTo-ParameterSplat**
 - **Initialize-TkAppAuthCertificate**
-- **Initialize-TkAppSpRegistration**
+- **New-TkAppSpOauth2Registration**
 - **Initialize-TkModuleEnv**
 - **Initialize-TkAppName**
 - **New-TkAppRegistration**

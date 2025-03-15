@@ -5,6 +5,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed authentication context for mggraph.
+
+### Changed
+
+- Updated private function names to be more descriptive.
+
+## [0.2.0] - 2025-03-14
+
 ### Added
 
 - Updated docs for the module.

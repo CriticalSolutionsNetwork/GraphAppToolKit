@@ -21,12 +21,12 @@
     $AppRegistration = Get-MgApplication -AppId "your-app-id"
     $RequiredResourceAccessList = @()
     $Context = [PSCustomObject]@{ TenantId = "your-tenant-id" }
-    Initialize-TkAppSpRegistration -AppRegistration $AppRegistration -RequiredResourceAccessList $RequiredResourceAccessList -Context $Context
+    New-TkAppSpOauth2Registration -AppRegistration $AppRegistration -RequiredResourceAccessList $RequiredResourceAccessList -Context $Context
     .NOTES
     This function requires the Microsoft.Graph PowerShell module.
 #>
 
-function Initialize-TkAppSpRegistration {
+function New-TkAppSpOauth2Registration {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     param(
         [Parameter(
@@ -156,12 +156,14 @@ function Initialize-TkAppSpRegistration {
                     $i++
                 }
             }
+            $RedirectUri = "&redirect_uri=https://login.microsoftonline.com/common/oauth2/nativeclient"
             # 5. Build the admin consent URL
             $adminConsentUrl = `
                 'https://login.microsoftonline.com/' `
                 + $Context.TenantId `
                 + '/adminconsent?client_id=' `
-                + $AppRegistration.AppId
+                + $AppRegistration.AppId `
+                + $RedirectUri
             Write-Verbose 'Please go to the following URL in your browser to provide admin consent:' -Verbose
             Write-AuditLog "`n`n$adminConsentUrl`n" -Severity information
             # For each end

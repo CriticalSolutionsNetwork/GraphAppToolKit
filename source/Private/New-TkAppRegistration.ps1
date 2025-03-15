@@ -89,7 +89,7 @@ function New-TkAppRegistration {
                 throw "Certificate with thumbprint $CertThumbprint not found in $CertStoreLocation."
             }
             $shouldProcessTarget = "'$DisplayName' for sign-in audience '$SignInAudience' with certificate thumbprint $CertThumbprint."
-            $shouldProcessOperation = "New-MgApplication"
+            $shouldProcessOperation = 'New-MgApplication'
             if ($PSCmdlet.ShouldProcess($shouldProcessTarget , $shouldProcessOperation )) {
                 $MgApplicationParams = @{
                     DisplayName            = $DisplayName
@@ -104,6 +104,9 @@ function New-TkAppRegistration {
                             Key   = $Cert.RawData
                         }
                     )
+                    Web                    = @{
+                        RedirectUris = @('https://login.microsoftonline.com/common/oauth2/nativeclient')
+                    }
                 }
                 $AppRegistration = New-MgApplication @MgApplicationParams
             }
