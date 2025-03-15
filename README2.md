@@ -270,16 +270,16 @@ Send-TkEmailAppMessage -AppId <String> -TenantId <String> -CertThumbprint <Strin
 ### Parameters
 | Name  | Alias  | Description | Required? | Pipeline Input | Default Value |
 | - | - | - | - | - | - |
-| <nobr>AppName</nobr> |  | \\[Vault Parameter Set Only\\] The name of the pre-created Microsoft Graph Email App \(stored in GraphEmailAppLocalStore\\). Used only if the 'Vault' parameter set is chosen. The function retrieves the AppId, TenantId, and certificate thumbprint from the vault entry. | true | false |  |
-| <nobr>AppId</nobr> |  | \\[Manual Parameter Set Only\\] The Azure AD application \(client\\) ID to use for sending the email. Must be used together with TenantId and CertThumbprint in the 'Manual' parameter set. | true | false |  |
-| <nobr>TenantId</nobr> |  | \\[Manual Parameter Set Only\\] The Azure AD tenant ID \(GUID or domain name\\). Must be used together with AppId and CertThumbprint in the 'Manual' parameter set. | true | false |  |
-| <nobr>CertThumbprint</nobr> |  | \\[Manual Parameter Set Only\\] The certificate thumbprint \(in Cert:\\CurrentUser\\My\\) used for authenticating as the Azure AD app. Must be used together with AppId and TenantId in the 'Manual' parameter set. | true | false |  |
+| <nobr>AppName</nobr> |  | \[Vault Parameter Set Only\] The name of the pre-created Microsoft Graph Email App \(stored in GraphEmailAppLocalStore\\). Used only if the 'Vault' parameter set is chosen. The function retrieves the AppId, TenantId, and certificate thumbprint from the vault entry. | true | false |  |
+| <nobr>AppId</nobr> |  | \[Manual Parameter Set Only\] The Azure AD application \(client\\) ID to use for sending the email. Must be used together with TenantId and CertThumbprint in the 'Manual' parameter set. | true | false |  |
+| <nobr>TenantId</nobr> |  | \[Manual Parameter Set Only\] The Azure AD tenant ID \(GUID or domain name\\). Must be used together with AppId and CertThumbprint in the 'Manual' parameter set. | true | false |  |
+| <nobr>CertThumbprint</nobr> |  | \[Manual Parameter Set Only\] The certificate thumbprint \(in Cert:\\CurrentUser\\My\\) used for authenticating as the Azure AD app. Must be used together with AppId and TenantId in the 'Manual' parameter set. | true | false |  |
 | <nobr>To</nobr> |  | The email address of the recipient. | true | false |  |
 | <nobr>FromAddress</nobr> |  | The email address of the sender who is authorized to send email as configured in the Graph Email App. | true | false |  |
 | <nobr>Subject</nobr> |  | The subject line of the email. | true | false |  |
 | <nobr>EmailBody</nobr> |  | The body text of the email. | true | false |  |
 | <nobr>AttachmentPath</nobr> |  | An array of file paths for any attachments to include in the email. Each path must exist as a leaf file. | false | false |  |
-| <nobr>VaultName</nobr> |  | \\[Vault Parameter Set Only\\] The name of the vault to retrieve the GraphEmailApp object. Default is 'GraphEmailAppLocalStore'. | false | false | GraphEmailAppLocalStore |
+| <nobr>VaultName</nobr> |  | \[Vault Parameter Set Only\] The name of the vault to retrieve the GraphEmailApp object. Default is 'GraphEmailAppLocalStore'. | false | false | GraphEmailAppLocalStore |
 | <nobr>WhatIf</nobr> | wi |  | false | false |  |
 | <nobr>Confirm</nobr> | cf |  | false | false |  |
 ### Note

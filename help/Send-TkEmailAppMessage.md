@@ -1,4 +1,4 @@
----
+﻿---
 external help file: GraphAppToolkit-help.xml
 Module Name: GraphAppToolkit
 online version:
@@ -63,6 +63,24 @@ Uses the provided AppId, TenantId, and CertThumbprint directly (no vault) to obt
 
 ## PARAMETERS
 
+### -AppId
+\[Manual Parameter Set Only\]
+The Azure AD application (client) ID to use for sending the email.
+Must be used together with TenantId
+and CertThumbprint in the 'Manual' parameter set.
+
+```yaml
+Type: String
+Parameter Sets: Manual
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -AppName
 \[Vault Parameter Set Only\]
 The name of the pre-created Microsoft Graph Email App (stored in GraphEmailAppLocalStore).
@@ -83,36 +101,16 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -AppId
-\[Manual Parameter Set Only\]
-The Azure AD application (client) ID to use for sending the email.
-Must be used together with TenantId
-and CertThumbprint in the 'Manual' parameter set.
+### -AttachmentPath
+An array of file paths for any attachments to include in the email.
+Each path must exist as a leaf file.
 
 ```yaml
-Type: String
-Parameter Sets: Manual
+Type: String[]
+Parameter Sets: (All)
 Aliases:
 
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -TenantId
-\[Manual Parameter Set Only\]
-The Azure AD tenant ID (GUID or domain name).
-Must be used together with AppId and CertThumbprint
-in the 'Manual' parameter set.
-
-```yaml
-Type: String
-Parameter Sets: Manual
-Aliases:
-
-Required: True
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False
@@ -136,8 +134,8 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -To
-The email address of the recipient.
+### -EmailBody
+The body text of the email.
 
 ```yaml
 Type: String
@@ -166,6 +164,21 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -Subject
 The subject line of the email.
 
@@ -181,12 +194,15 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -EmailBody
-The body text of the email.
+### -TenantId
+\[Manual Parameter Set Only\]
+The Azure AD tenant ID (GUID or domain name).
+Must be used together with AppId and CertThumbprint
+in the 'Manual' parameter set.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: Manual
 Aliases:
 
 Required: True
@@ -196,16 +212,15 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -AttachmentPath
-An array of file paths for any attachments to include in the email.
-Each path must exist as a leaf file.
+### -To
+The email address of the recipient.
 
 ```yaml
-Type: String[]
+Type: String
 Parameter Sets: (All)
 Aliases:
 
-Required: False
+Required: True
 Position: Named
 Default value: None
 Accept pipeline input: False
@@ -229,22 +244,6 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -WhatIf
-Shows what would happen if the cmdlet runs.
-The cmdlet is not run.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases: wi
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -Confirm
 Prompts you for confirmation before running the cmdlet.
 
@@ -260,13 +259,14 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -ProgressAction
-{{ Fill ProgressAction Description }}
+### -WhatIf
+Shows what would happen if the cmdlet runs.
+The cmdlet is not run.
 
 ```yaml
-Type: ActionPreference
+Type: SwitchParameter
 Parameter Sets: (All)
-Aliases: proga
+Aliases: wi
 
 Required: False
 Position: Named

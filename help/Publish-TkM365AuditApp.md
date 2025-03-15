@@ -1,4 +1,4 @@
----
+﻿---
 external help file: GraphAppToolkit-help.xml
 Module Name: GraphAppToolkit
 online version:
@@ -73,6 +73,21 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -DoNotUseDomainSuffix
+If specified, does not append the domain suffix to the app name.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -KeyExportPolicy
 Specifies whether the newly created certificate (if no thumbprint is provided) is
 'Exportable' or 'NonExportable'.
@@ -90,56 +105,8 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -VaultName
-The SecretManagement vault name in which to store the app credentials.
-Defaults to
-"M365AuditAppLocalStore" if not specified.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 4
-Default value: M365AuditAppLocalStore
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -OverwriteVaultSecret
 If specified, overwrites an existing secret in the specified vault if it already exists.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ReturnParamSplat
-If specified, returns a parameter splat string for use in other functions, instead of the
-default PSCustomObject containing the app details.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -DoNotUseDomainSuffix
-If specified, does not append the domain suffix to the app name.
 
 ```yaml
 Type: SwitchParameter
@@ -164,6 +131,39 @@ Aliases: proga
 Required: False
 Position: Named
 Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ReturnParamSplat
+If specified, returns a parameter splat string for use in other functions, instead of the
+default PSCustomObject containing the app details.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -VaultName
+The SecretManagement vault name in which to store the app credentials.
+Defaults to
+"M365AuditAppLocalStore" if not specified.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 4
+Default value: M365AuditAppLocalStore
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

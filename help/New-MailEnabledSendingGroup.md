@@ -1,4 +1,4 @@
----
+﻿---
 external help file: GraphAppToolkit-help.xml
 Module Name: GraphAppToolkit
 online version:
@@ -56,23 +56,6 @@ and a primary SMTP address of Senders@customdomain.org.
 
 ## PARAMETERS
 
-### -Name
-The name of the mail-enabled security group to create or retrieve.
-This is also used as
-the alias if no separate Alias parameter is provided.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -Alias
 An optional alias for the group.
 If omitted, the group name is used as the alias.
@@ -83,23 +66,6 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -PrimarySmtpAddress
-(CustomDomain parameter set) The full SMTP address for the group (e.g.
-"MyGroup@contoso.com").
-This parameter is mandatory when using the 'CustomDomain' parameter set.
-
-```yaml
-Type: String
-Parameter Sets: CustomDomain
-Aliases:
-
-Required: True
 Position: Named
 Default value: None
 Accept pipeline input: False
@@ -123,14 +89,47 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -WhatIf
-Shows what would happen if the cmdlet runs.
-The cmdlet is not run.
+### -Name
+The name of the mail-enabled security group to create or retrieve.
+This is also used as
+the alias if no separate Alias parameter is provided.
 
 ```yaml
-Type: SwitchParameter
+Type: String
 Parameter Sets: (All)
-Aliases: wi
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -PrimarySmtpAddress
+(CustomDomain parameter set) The full SMTP address for the group (e.g.
+"MyGroup@contoso.com").
+This parameter is mandatory when using the 'CustomDomain' parameter set.
+
+```yaml
+Type: String
+Parameter Sets: CustomDomain
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
 
 Required: False
 Position: Named
@@ -154,13 +153,14 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -ProgressAction
-{{ Fill ProgressAction Description }}
+### -WhatIf
+Shows what would happen if the cmdlet runs.
+The cmdlet is not run.
 
 ```yaml
-Type: ActionPreference
+Type: SwitchParameter
 Parameter Sets: (All)
-Aliases: proga
+Aliases: wi
 
 Required: False
 Position: Named
