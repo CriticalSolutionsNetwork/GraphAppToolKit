@@ -4,13 +4,13 @@
     .DESCRIPTION
     The Initialize-TkEmailAppParamsObject function creates and returns a new instance of the TkEmailAppParams class using the provided parameters. This function ensures that all necessary parameters are provided and initializes the object accordingly.
     .PARAMETER AppId
-    The application ID used to identify the email application.
+    The application ID used to uniquely identify the email application.
     .PARAMETER Id
-    The unique identifier for the email application instance.
+    The unique identifier for the specific email application instance.
     .PARAMETER AppName
     The name of the email application being initialized.
-    .PARAMETER ClientCertName
-    The name of the client certificate used by the email application.
+    .PARAMETER CertificateSubject
+    The subject name of the client certificate used by the email application.
     .PARAMETER AppRestrictedSendGroup
     The group that is restricted from sending emails within the application.
     .PARAMETER CertExpires
@@ -31,7 +31,7 @@
     [TkEmailAppParams]
     Returns a new instance of the TkEmailAppParams class initialized with the provided parameters.
     .EXAMPLE
-    $tkEmailAppParams = Initialize-TkEmailAppParamsObject -AppId "12345" -Id "67890" -AppName "MyEmailApp" -AppRestrictedSendGroup "RestrictedGroup" -CertExpires "2023-12-31" -CertThumbprint "ABCDEF123456" -ConsentUrl "https://consent.url" -DefaultDomain "example.com" -SendAsUser "user@example.com" -SendAsUserEmail "user@example.com" -TenantID "tenant123"
+    $tkEmailAppParams = Initialize-TkEmailAppParamsObject -AppId "12345" -Id "67890" -AppName "MyEmailApp" -CertificateSubject "CN=MyCert" -AppRestrictedSendGroup "RestrictedGroup" -CertExpires "2023-12-31" -CertThumbprint "ABCDEF123456" -ConsentUrl "https://consent.url" -DefaultDomain "example.com" -SendAsUser "user@example.com" -SendAsUserEmail "user@example.com" -TenantID "tenant123"
 
     This example initializes a TkEmailAppParams object with the specified parameters.
 #>

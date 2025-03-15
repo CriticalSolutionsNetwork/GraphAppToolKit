@@ -7,9 +7,11 @@
     .PARAMETER Prefix
     A short prefix for your app name (2-4 alphanumeric characters). This parameter is mandatory.
     .PARAMETER ScenarioName
-    An optional scenario name to include in the app name (e.g., AuditGraphEmail, MemPolicy, etc.). Defaults to "GraphApp".
+    An optional scenario name to include in the app name (e.g., AuditGraphEmail, MemPolicy, etc.). Defaults to "TkEmailApp".
     .PARAMETER UserId
     An optional user email to append an "As-[username]" suffix to the app name. The email must be in a valid format.
+    .PARAMETER DoNotUseDomainSuffix
+    A switch to add session domain suffix to the app name. If not specified, the domain suffix is derived from USERDNSDOMAIN.
     .EXAMPLE
     PS> Initialize-TkAppName -Prefix "MSN"
     Generates an app name with the prefix "MSN" and default scenario name "GraphApp".

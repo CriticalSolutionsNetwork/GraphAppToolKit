@@ -1,4 +1,4 @@
-<#
+﻿<#
     .SYNOPSIS
         Publishes a new MEM (Intune) Policy Manager App in Azure AD with read-only or read-write permissions.
     .DESCRIPTION
