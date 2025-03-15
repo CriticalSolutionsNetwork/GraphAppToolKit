@@ -185,7 +185,7 @@ function Send-TkEmailAppMessage {
         Write-AuditLog '###########################################################'
         # Install and import the Microsoft.Graph module. Tested: 1.22.0
         $PublicMods = `
-            'Microsoft.PowerShell.SecretManagement', 'SecretManagement.JustinGrote.CredMan', 'MSAL.PS'
+            'Microsoft.PowerShell.SecretManagement', 'SecretManagement.JustinGrote.CredMan'
         $PublicVers = `
             '1.1.2', '1.0.0', '4.37.0.0'
         $params1 = @{
@@ -240,14 +240,22 @@ function Send-TkEmailAppMessage {
         Write-AuditLog "$CertThumbprint"
     } # End Region Begin
     Process {
+        # https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow#second-case-access-token-request-with-a-certificate
         # Authenticate with Azure AD and obtain an access token for the Microsoft Graph API using the certificate
-        $MSToken = Get-MsalToken `
+            $MSToken = Get-TkMsalToken `
+            -ClientCertificate $Cert `
+            -ClientId $AppId `
+            -TenantId $Tenant `
+            -ErrorAction Stop
+        <#
+                $MSToken = Get-MsalToken `
             -ClientCertificate $Cert `
             -ClientId $AppId `
             -Authority "https://login.microsoftonline.com/$Tenant/oauth2/v2.0/token" `
             -ErrorAction Stop
+        #>
         # Set up the request headers
-        $authHeader = @{Authorization = "Bearer $($MSToken.AccessToken)" }
+        $authHeader = @{Authorization = "Bearer $($MSToken)" }
         # Set up the request URL
         $url = "https://graph.microsoft.com/v1.0/users/$($FromAddress)/sendMail"
         # Build the message body

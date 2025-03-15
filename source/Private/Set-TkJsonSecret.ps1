@@ -101,4 +101,3 @@ function Set-TkJsonSecret {
         throw
     }
 }
-$WarningPreference = 'Continue'

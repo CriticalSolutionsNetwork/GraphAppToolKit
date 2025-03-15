@@ -21,6 +21,12 @@ function Get-TkExistingCert {
         [Parameter(Mandatory = $true)]
         [string]$CertName
     )
+    if (-not $script:LogString) {
+        Write-AuditLog -Start
+    }
+    else {
+        Write-AuditLog -BeginFunction
+    }
     $ExistingCert = Get-ChildItem -Path Cert:\CurrentUser\My -ErrorAction SilentlyContinue |
     Where-Object { $_.Subject -eq $CertName } -ErrorAction SilentlyContinue
     if ( $ExistingCert) {
@@ -47,4 +53,5 @@ function Get-TkExistingCert {
     else {
         Write-AuditLog "Certificate with subject '$CertName' does not exist in the certificate store. Continuing..."
     }
+    Write-AuditLog -EndFunction
 }
