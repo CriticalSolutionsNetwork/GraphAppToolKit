@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added Get-TkMsalToken cmdlet to retrieve an MSAL token using API calls.
 - Added Managed Identity support for  Get-TkMsalToken cmdlet (Needs to be tested).
+- SecureString support for Get-TkMsalToken cmdlet.
 
 ### Fixed
 
