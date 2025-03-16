@@ -1,9 +1,11 @@
 <#
     .SYNOPSIS
-        Retrieves an OAuth2 token using various authentication methods.
+        Retrieves an OAuth2 token for accessing Microsoft Graph or other APIs using various authentication methods.
     .DESCRIPTION
-        The Get-TkMsalToken function retrieves an OAuth2 token for accessing APIs such as Microsoft Graph.
-        It supports multiple authentication methods including client certificate, client secret, and managed identity.
+        The Get-TkMsalToken function supports three authentication methods:
+        - Client Certificate
+        - Client Secret
+        - Managed Identity (only works in Azure-hosted environments)
     .PARAMETER ClientCertificate
         The X.509 certificate used for authentication. Example:
         $ClientCertificate = Get-Item Cert:\CurrentUser\My\<thumbprint>
@@ -20,18 +22,19 @@
     .PARAMETER AuthorityType
         The authority type to use for authentication. Valid values are 'Global', 'AzureGov', and 'China'.
     .EXAMPLE
-        $token = Get-TkMsalToken -ClientId 'your-client-id' -TenantId 'your-tenant-id' -ClientSecret $secureClientSecret
+        Get-TkMsalToken -ClientCertificate $ClientCert -ClientId 'your-client-id' -TenantId 'your-tenant-id'
     .EXAMPLE
-        $token = Get-TkMsalToken -ClientId 'your-client-id' -TenantId 'your-tenant-id' -ClientCertificate $cert
+        Get-TkMsalToken -ClientSecret $ClientSecret -ClientId 'your-client-id' -TenantId 'your-tenant-id'
     .EXAMPLE
-        $token = Get-TkMsalToken -ClientId 'your-client-id' -TenantId 'your-tenant-id' -UseManagedIdentity
-
+        Get-TkMsalToken -UseManagedIdentity -ClientId 'your-client-id' -TenantId 'your-tenant-id'
     .NOTES
-        This function requires the MSAL.PS module for token acquisition.
+        Author: DrIOSx
+        Date: 2025-03-16
+        Version: 1.0
 #>
 function Get-TkMsalToken {
     [CmdletBinding(DefaultParameterSetName = 'ClientCertificate')]
-    [OutputType([System.Security.SecureString])]
+    [OutputType([string])]
     param (
         # Client Certificate
         [Parameter(
@@ -93,7 +96,7 @@ function Get-TkMsalToken {
         $AuthorityType = 'Global'
     )
     begin {
-        if (-not $script:LogString) {
+        if (-not $script:logString) {
             Write-AuditLog -Start
         }
         else {
@@ -101,66 +104,58 @@ function Get-TkMsalToken {
         }
         # Define Authority URL based on selected cloud type
         switch ($AuthorityType) {
-            'Global' { $Authority = "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/token" }
-            'AzureGov' { $Authority = "https://login.microsoftonline.us/$TenantId/oauth2/v2.0/token" }
-            'China' { $Authority = "https://login.chinacloudapi.cn/$TenantId/oauth2/v2.0/token" }
+            'Global' { $authority = "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/token" }
+            'AzureGov' { $authority = "https://login.microsoftonline.us/$TenantId/oauth2/v2.0/token" }
+            'China' { $authority = "https://login.chinacloudapi.cn/$TenantId/oauth2/v2.0/token" }
         }
     }
     process {
         if ($PSCmdlet.ParameterSetName -eq 'ManagedIdentity') {
-            # 🟢 Managed Identity Authentication (Only Works in Azure-hosted Environments)
+            # Managed Identity Authentication (Only Works in Azure-hosted Environments)
             try {
-                # 📝 Construct the URL for requesting an access token from the Azure Instance Metadata Service (IMDS)
-                # This URL is specific to Managed Identity authentication in Azure VMs, Azure Functions, App Services, etc.
                 $uri = 'http://169.254.169.254/metadata/identity/oauth2/token?resource=https://graph.microsoft.com&api-version=2019-08-01'
-                # 📝 Invoke-RestMethod sends a request to retrieve an OAuth2 token for the specified resource (Graph API)
-                # 🔹 Managed Identity requires a GET request (unlike client secret/cert auth which use POST)
-                $Response = Invoke-RestMethod `
+                $response = Invoke-RestMethod `
                     -Uri $uri `
                     -Method Get `
-                    -Headers @{ 'Metadata' = 'true' } ` # 🔹 Mandatory header to indicate this is an IMDS request
-                -ErrorAction Stop # 🔹 Ensures an error is thrown if the request fails
-                # 📝 Return only the access token from the API response
-                return $Response.access_token
+                    -Headers @{ 'Metadata' = 'true' } `
+                    -ErrorAction Stop
+                return $response.access_token
             }
             catch {
-                # 🛑 If the request fails, print an error message and rethrow the exception
                 Write-Error "Failed to obtain token via Managed Identity: $_"
                 throw
             }
         }
         elseif ($PSCmdlet.ParameterSetName -eq 'ClientCertificate') {
-            # Validate Certificate Expiration
             if ($ClientCertificate.NotAfter -lt (Get-Date)) {
                 Write-Error "The provided certificate has expired on $($ClientCertificate.NotAfter). Please use a valid certificate."
                 throw "Certificate has expired."
             }
-            # Generate JWT for client certificate authentication
-            $JwtHeader = @{
+            $jwtHeader = @{
                 alg = 'RS256'
                 typ = 'JWT'
                 x5t = [Convert]::ToBase64String($ClientCertificate.GetCertHash()) -replace '\+', '-' -replace '/', '_' -replace '='
             }
-            $IatTime = [int](Get-Date (Get-Date).ToUniversalTime() -UFormat %s)
-            $ExpTime = $IatTime + 600  # 10 min expiration
-            $JwtPayload = @{
-                aud = $Authority
-                exp = $ExpTime
-                iat = $IatTime
-                nbf = $IatTime
+            $iatTime = [int](Get-Date (Get-Date).ToUniversalTime() -UFormat %s)
+            $expTime = $iatTime + 600  # 10 min expiration
+            $jwtPayload = @{
+                aud = $authority
+                exp = $expTime
+                iat = $iatTime
+                nbf = $iatTime
                 iss = $ClientId
                 sub = $ClientId
                 jti = [guid]::NewGuid().ToString()
             }
-            $Base64UrlEncode = { param ($String) [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($String)) -replace '\+', '-' -replace '/', '_' -replace '=' }
-            $JwtHeaderEncoded = &$Base64UrlEncode (ConvertTo-Json $JwtHeader -Compress)
-            $JwtPayloadEncoded = &$Base64UrlEncode (ConvertTo-Json $JwtPayload -Compress)
-            $JwtToSign = "$JwtHeaderEncoded.$JwtPayloadEncoded"
+            $base64UrlEncode = { param ($string) [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($string)) -replace '\+', '-' -replace '/', '_' -replace '=' }
+            $jwtHeaderEncoded = &$base64UrlEncode (ConvertTo-Json $jwtHeader -Compress)
+            $jwtPayloadEncoded = &$base64UrlEncode (ConvertTo-Json $jwtPayload -Compress)
+            $jwtToSign = "$jwtHeaderEncoded.$jwtPayloadEncoded"
             try {
-                $Csp = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($ClientCertificate)
-                $Signature = [Convert]::ToBase64String(
-                    $Csp.SignData(
-                        [System.Text.Encoding]::UTF8.GetBytes($JwtToSign),
+                $csp = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($ClientCertificate)
+                $signature = [Convert]::ToBase64String(
+                    $csp.SignData(
+                        [System.Text.Encoding]::UTF8.GetBytes($jwtToSign),
                         [System.Security.Cryptography.HashAlgorithmName]::SHA256,
                         [System.Security.Cryptography.RSASignaturePadding]::Pkcs1
                     )
@@ -170,20 +165,20 @@ function Get-TkMsalToken {
                 Write-Error "Failed to sign JWT: $_"
                 throw
             }
-            $ClientAssertion = "$JwtToSign.$Signature"
-            $Body = @{
+            $clientAssertion = "$jwtToSign.$signature"
+            $body = @{
                 client_id             = $ClientId
-                client_assertion      = $ClientAssertion
+                client_assertion      = $clientAssertion
                 client_assertion_type = 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
                 grant_type            = 'client_credentials'
                 scope                 = $Scope
             }
         }
         elseif ($PSCmdlet.ParameterSetName -eq 'ClientSecret') {
-            $PlainClientSecret = ConvertFrom-SecureString -SecureString $ClientSecret -AsPlainText
-            $Body = @{
+            $plainClientSecret = ConvertFrom-SecureString -SecureString $ClientSecret -AsPlainText
+            $body = @{
                 client_id     = $ClientId
-                client_secret = $PlainClientSecret
+                client_secret = $plainClientSecret
                 grant_type    = 'client_credentials'
                 scope         = $Scope
             }
@@ -191,13 +186,14 @@ function Get-TkMsalToken {
     }
     end {
         try {
-            Write-AuditLog "Requesting token from $Authority."
-            $TokenResponse = (Invoke-RestMethod -Method Post -Uri $Authority -ContentType 'application/x-www-form-urlencoded' -Body $Body -ErrorAction Stop).access_token
+            Write-AuditLog "Requesting token from $authority."
+            $tokenResponse = (Invoke-RestMethod -Method Post -Uri $authority -ContentType 'application/x-www-form-urlencoded' -Body $body -ErrorAction Stop).access_token
+            Write-AuditLog "Successfully obtained token from $authority."
             Write-AuditLog -EndFunction
-            return $TokenResponse | ConvertTo-SecureString -AsPlainText -Force
+            return $tokenResponse
         }
         catch {
-            Write-Error "Failed to obtain token: $_"
+            Write-AuditLog -Message "Failed to obtain token: $($_.Exception.Message)" -Severity "Error"
             throw
         }
     }

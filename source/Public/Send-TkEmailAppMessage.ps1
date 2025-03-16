@@ -247,24 +247,7 @@ function Send-TkEmailAppMessage {
             -ClientId $AppId `
             -TenantId $Tenant `
             -ErrorAction Stop
-        <#
-                $MSToken = Get-MsalToken `
-            -ClientCertificate $Cert `
-            -ClientId $AppId `
-            -Authority "https://login.microsoftonline.com/$Tenant/oauth2/v2.0/token" `
-            -ErrorAction Stop
-        #>
-        # Set up the request headers
-        # If powershell 7, use ConvertFrom-SecureString -AsPlainText
-        # Else use $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureString),$plaintext = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
-        if ($PSVersionTable.PSVersion.Major -ge 7) {
-            $Token = ConvertFrom-SecureString -SecureString $MSToken -AsPlainText
-        }
-        else {
-            $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($MSToken)
-            $Token = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
-        }
-        $authHeader = @{Authorization = "Bearer $Token" }
+        $authHeader = @{Authorization = "Bearer $MSToken" }
         # Set up the request URL
         $url = "https://graph.microsoft.com/v1.0/users/$($FromAddress)/sendMail"
         # Build the message body
