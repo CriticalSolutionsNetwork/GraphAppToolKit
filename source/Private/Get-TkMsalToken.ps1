@@ -93,10 +93,10 @@ function Get-TkMsalToken {
     )
     begin {
         if (-not $script:LogString) {
-            #Write-AuditLog -Start
+            Write-AuditLog -Start
         }
         else {
-            #Write-AuditLog -BeginFunction
+            Write-AuditLog -BeginFunction
         }
         # Define Authority URL based on selected cloud type
         switch ($AuthorityType) {
@@ -132,7 +132,7 @@ function Get-TkMsalToken {
             # Validate Certificate Expiration
             if ($ClientCertificate.NotAfter -lt (Get-Date)) {
                 Write-Error "The provided certificate has expired on $($ClientCertificate.NotAfter). Please use a valid certificate."
-                return $null
+                throw "Certificate has expired."
             }
             # Generate JWT for client certificate authentication
             $JwtHeader = @{
@@ -140,7 +140,7 @@ function Get-TkMsalToken {
                 typ = 'JWT'
                 x5t = [Convert]::ToBase64String($ClientCertificate.GetCertHash()) -replace '\+', '-' -replace '/', '_' -replace '='
             }
-            $IatTime = [int](Get-Date -UFormat %s)
+            $IatTime = [int](Get-Date (Get-Date).ToUniversalTime() -UFormat %s)
             $ExpTime = $IatTime + 600  # 10 min expiration
             $JwtPayload = @{
                 aud = $Authority
@@ -190,7 +190,10 @@ function Get-TkMsalToken {
     }
     end {
         try {
-            return (Invoke-RestMethod -Method Post -Uri $Authority -ContentType 'application/x-www-form-urlencoded' -Body $Body -ErrorAction Stop).access_token
+            Write-AuditLog "Requesting token from $Authority."
+            $TokenResponse = (Invoke-RestMethod -Method Post -Uri $Authority -ContentType 'application/x-www-form-urlencoded' -Body $Body -ErrorAction Stop).access_token
+            Write-AuditLog -EndFunction
+            return $TokenResponse
         }
         catch {
             Write-Error "Failed to obtain token: $_"
