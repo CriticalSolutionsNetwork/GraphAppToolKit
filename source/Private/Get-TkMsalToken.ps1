@@ -31,6 +31,7 @@
 #>
 function Get-TkMsalToken {
     [CmdletBinding(DefaultParameterSetName = 'ClientCertificate')]
+    [OutputType([System.Security.SecureString])]
     param (
         # Client Certificate
         [Parameter(
@@ -193,7 +194,7 @@ function Get-TkMsalToken {
             Write-AuditLog "Requesting token from $Authority."
             $TokenResponse = (Invoke-RestMethod -Method Post -Uri $Authority -ContentType 'application/x-www-form-urlencoded' -Body $Body -ErrorAction Stop).access_token
             Write-AuditLog -EndFunction
-            return $TokenResponse
+            return $TokenResponse | ConvertTo-SecureString -AsPlainText -Force
         }
         catch {
             Write-Error "Failed to obtain token: $_"
