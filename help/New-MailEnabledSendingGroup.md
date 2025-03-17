@@ -15,12 +15,12 @@ Creates or retrieves a mail-enabled security group with a custom or default doma
 ### CustomDomain (Default)
 ```
 New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -PrimarySmtpAddress <String>
- [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
+ [-LogOutputPath <String>] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### DefaultDomain
 ```
-New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -DefaultDomain <String>
+New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -DefaultDomain <String> [-LogOutputPath <String>]
  [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
@@ -117,6 +117,22 @@ Parameter Sets: DefaultDomain
 Aliases:
 
 Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -LogOutputPath
+An optional path to output the log file.
+If not provided, logs will not be written to a file.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False

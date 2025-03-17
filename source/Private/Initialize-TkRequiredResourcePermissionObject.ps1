@@ -4,9 +4,13 @@
     .DESCRIPTION
     The Initialize-TkRequiredResourcePermissionObject function creates a new required resource permission object for Microsoft Graph and specific scenarios. It retrieves service principals by display name, builds an array of MicrosoftGraphRequiredResourceAccess objects, and processes application permissions and scenario-specific permissions.
     .PARAMETER GraphPermissions
-    An array of application (app-only) permissions for Microsoft Graph. Default is 'Mail.Send'.
+    Specifies an array of application (app-only) permissions for Microsoft Graph. Defaults to 'Mail.Send'. This parameter supports multiple permissions.
     .PARAMETER Scenario
-    The scenario app version. Currently supports '365Audit'.
+    Specifies the scenario for which to include additional permissions. Currently supports '365Audit'.
+    .INPUTS
+    None
+    .OUTPUTS
+    [PSCustomObject] containing the RequiredResourceAccessList.
     .EXAMPLE
     PS C:\> Initialize-TkRequiredResourcePermissionObject -GraphPermissions 'User.Read', 'Mail.Send'
 
@@ -16,6 +20,8 @@
 
     Creates a required resource permission object for the '365Audit' scenario, including specific SharePoint and Exchange permissions.
     .NOTES
+    Author: DougRios | GraphAppToolkit Module
+    Last Updated: 2025-03-16
     This function requires the Microsoft.Graph PowerShell module.
 #>
 function Initialize-TkRequiredResourcePermissionObject {
@@ -23,13 +29,13 @@ function Initialize-TkRequiredResourcePermissionObject {
     param (
         [Parameter(
             Mandatory = $false,
-            HelpMessage = 'Application (app-only) permissions for Microsoft Graph.'
+            HelpMessage = 'Specifies an array of application (app-only) permissions for Microsoft Graph. Defaults to ''Mail.Send''. This parameter supports multiple permissions.'
         )]
         [string[]]
         $GraphPermissions = @('Mail.Send'),
         [Parameter(
             Mandatory = $false,
-            HelpMessage = 'Scenario app version.',
+            HelpMessage = 'Specifies the scenario for which to include additional permissions. Currently supports ''365Audit''.',
             ParameterSetName = 'Scenario'
         )]
         [ValidateSet('365Audit')]
@@ -37,6 +43,7 @@ function Initialize-TkRequiredResourcePermissionObject {
         $Scenario
     )
     process {
+        # Start logging
         if (-not $script:LogString) {
             Write-AuditLog -Start
         }
@@ -45,7 +52,7 @@ function Initialize-TkRequiredResourcePermissionObject {
         }
         try {
             Write-AuditLog '###############################################'
-            ## 1) Retrieve service principals by DisplayName
+            # 1) Retrieve service principals by DisplayName
             Write-AuditLog 'Looking up service principals by display name...'
             $spGraph = Get-MgServicePrincipal -Filter "DisplayName eq 'Microsoft Graph'" -ErrorAction Stop
             # 2) Build an array of [MicrosoftGraphRequiredResourceAccess] objects
@@ -57,13 +64,15 @@ function Initialize-TkRequiredResourcePermissionObject {
             # If GraphPermissions is not null or empty, process them
             if ($GraphPermissions -and $GraphPermissions.Count -gt 0) {
                 if (-not $spGraph) {
-                    throw 'Microsoft Graph Service Principal not found (by display name).'
+                    $errorMessage = 'Microsoft Graph Service Principal not found (by display name).'
+                    Write-AuditLog -Message $errorMessage -Severity Error
+                    throw $errorMessage
                 }
                 Write-AuditLog "Gathering permissions: $($GraphPermissions -join ', ')"
                 $graphRra = [Microsoft.Graph.PowerShell.Models.MicrosoftGraphRequiredResourceAccess]::new()
                 $graphRra.ResourceAppId = $spGraph.AppId
                 foreach ($permName in $GraphPermissions) {
-                    $foundPerm = $permissionList | Where-Object { $_.Name -eq $permName } #Find-MgGraphPermission -PermissionType Application -All |
+                    $foundPerm = $permissionList | Where-Object { $_.Name -eq $permName }
                     if ($foundPerm) {
                         # If multiple matches, pick the first
                         $graphRra.ResourceAccess += @{ Id = $foundPerm.Id; Type = 'Role' }
@@ -77,7 +86,9 @@ function Initialize-TkRequiredResourcePermissionObject {
                     $requiredResourceAccessList += $graphRra
                 }
                 else {
-                    throw "No Graph permissions found for '$($GraphPermissions -join ', ')'. Check the permission names and try again."
+                    $errorMessage = "No Graph permissions found for '$($GraphPermissions -join ', ')'. Check the permission names and try again."
+                    Write-AuditLog -Message $errorMessage -Severity Error
+                    throw $errorMessage
                 }
             }
             # endregion
@@ -93,7 +104,7 @@ function Initialize-TkRequiredResourcePermissionObject {
                 $requiredResourceAccessList += $spRra
                 # endregion
                 # region Exchange perms
-                [Microsoft.Graph.PowerShell.Models.MicrosoftGraphRequiredResourceAccess] $spRra = $null
+                [Microsoft.Graph.PowerShell.Models.MicrosoftGraphRequiredResourceAccess] $exRra = $null
                 $exRra = [Microsoft.Graph.PowerShell.Models.MicrosoftGraphRequiredResourceAccess]::new()
                 $exRra.ResourceAppId = "00000002-0000-0ff1-ce00-000000000000" # Exchange Online
                 $exRra.ResourceAccess += @{ Id = 'dc50a0fb-09a3-484d-be87-e023b12c6440'; Type = 'Role' }
@@ -104,11 +115,11 @@ function Initialize-TkRequiredResourcePermissionObject {
             $result = [PSCustomObject]@{
                 RequiredResourceAccessList = $requiredResourceAccessList
             }
-            # }
             Write-AuditLog 'Returning context object.'
             return $result
         }
         catch {
+            Write-AuditLog -Message "An error occurred: $($_.Exception.Message)" -Severity Error
             throw
         }
         finally {

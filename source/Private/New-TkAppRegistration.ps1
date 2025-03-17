@@ -1,24 +1,26 @@
 <#
     .SYNOPSIS
-    Creates a new enterprise app registration in Azure AD.
+        Creates a new enterprise app registration in Azure AD.
     .DESCRIPTION
-    The New-TkAppRegistration function creates a new enterprise app registration in Azure AD using the provided display name, certificate thumbprint, and other optional parameters such as required resource access list, sign-in audience, certificate store location, and notes.
+        The New-TkAppRegistration function creates a new enterprise app registration in Azure AD using the provided display name, certificate thumbprint, and additional optional parameters such as required resource access list, sign-in audience, certificate store location, and descriptive notes about this app's purpose or usage.
     .PARAMETER DisplayName
-    The display name for the new app registration. This parameter is mandatory.
+        The display name for the new app registration, which must be clearly defined and descriptive.
     .PARAMETER RequiredResourceAccessList
-    An array of MicrosoftGraphRequiredResourceAccess objects for multi-resource mode. This parameter is optional.
+        An array of MicrosoftGraphRequiredResourceAccess objects to configure multi-resource access modes securely.
     .PARAMETER SignInAudience
-    The sign-in audience for the app registration. Valid values are 'AzureADMyOrg', 'AzureADMultipleOrgs', and 'AzureADandPersonalMicrosoftAccount'. The default value is 'AzureADMyOrg'.
+        The sign-in audience for the app registration. Valid values include 'AzureADMyOrg', 'AzureADMultipleOrgs', and 'AzureADandPersonalMicrosoftAccount'.
     .PARAMETER CertThumbprint
-    The thumbprint of the certificate used to secure this app. This parameter is mandatory.
+        The thumbprint of the certificate used to secure this app registration, ensuring the certificate is valid and present.
     .PARAMETER CertStoreLocation
-    The certificate store location (e.g., "Cert:\CurrentUser\My"). The default value is 'Cert:\CurrentUser\My'. This parameter is optional.
+        The certificate store location, for example "Cert:\CurrentUser\My", where the certificate is located.
     .PARAMETER Notes
-    A descriptive note about this app's purpose or usage. This parameter is optional.
+        A descriptive note about this app's purpose or usage to provide context and clarity.
+    .INPUTS
+        None.
+    .OUTPUTS
+        [Microsoft.Graph.PowerShell.Models.MicrosoftGraphApplication1] representing the newly created app registration.
     .EXAMPLE
-    $AppRegistration = New-TkAppRegistration -DisplayName "MyApp" -CertThumbprint "ABC123" -Notes "This is a sample app."
-
-    This example creates a new app registration with the display name "MyApp" and the specified certificate thumbprint. A note is also provided.
+        $AppRegistration = New-TkAppRegistration -DisplayName "MyApp" -CertThumbprint "ABC123" -Notes "This is a sample app registration for enterprise use."
     .NOTES
     This function requires the Microsoft.Graph PowerShell module.
     Required permissions:
@@ -39,13 +41,13 @@ function New-TkAppRegistration {
         [Parameter(
             Mandatory = $false,
             HelpMessage = `
-                'Pass an array of MicrosoftGraphRequiredResourceAccess objects for multi-resource mode.'
+                'An array of MicrosoftGraphRequiredResourceAccess objects to configure multi-resource access modes securely.'
         )]
         [Microsoft.Graph.PowerShell.Models.MicrosoftGraphRequiredResourceAccess[]]
         $RequiredResourceAccessList,
         [Parameter(
             HelpMessage = `
-                'The sign-in audience for the app registration.'
+                'The sign-in audience for the app registration. Valid values include ''AzureADMyOrg'', ''AzureADMultipleOrgs'', and ''AzureADandPersonalMicrosoftAccount''.'
         )]
         [ValidateSet('AzureADMyOrg', 'AzureADMultipleOrgs', 'AzureADandPersonalMicrosoftAccount')]
         [string]
@@ -53,20 +55,21 @@ function New-TkAppRegistration {
         [Parameter(
             Mandatory = $true,
             HelpMessage = `
-                'The thumbprint of the certificate used to secure this app.'
+                'The thumbprint of the certificate used to secure this app registration, ensuring the certificate is valid and present.'
         )]
         [string]
         $CertThumbprint,
         [Parameter(
             Mandatory = $false,
             HelpMessage = `
-                'The certificate store location (e.g., "Cert:\CurrentUser\My").'
+                'The certificate store location (e.g., "Cert:\CurrentUser\My") where the certificate is located.'
         )]
         [string]
         $CertStoreLocation = 'Cert:\CurrentUser\My',
         [Parameter(
             Mandatory = $false,
-            HelpMessage = "A descriptive note about this app's purpose or usage."
+            HelpMessage = `
+                'A descriptive note about this app''s purpose or usage to provide context and clarity.'
         )]
         [string]
         $Notes
@@ -83,14 +86,13 @@ function New-TkAppRegistration {
         Write-AuditLog "Creating new enterprise app registration for '$DisplayName'."
         if ($CertThumbprint) {
             # 1) Retrieve the certificate from the CurrentUser store
-            $Cert = Get-ChildItem -Path $CertStoreLocation |
-            Where-Object { $_.Thumbprint -eq $CertThumbprint }
-            if (-not $Cert) {
+            $cert = Get-ChildItem -Path $CertStoreLocation | Where-Object { $_.Thumbprint -eq $CertThumbprint }
+            if (-not $cert) {
                 throw "Certificate with thumbprint $CertThumbprint not found in $CertStoreLocation."
             }
             $shouldProcessTarget = "'$DisplayName' for sign-in audience '$SignInAudience' with certificate thumbprint $CertThumbprint."
-            $shouldProcessOperation = "New-MgApplication"
-            if ($PSCmdlet.ShouldProcess($shouldProcessTarget , $shouldProcessOperation )) {
+            $shouldProcessOperation = 'New-MgApplication'
+            if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
                 $MgApplicationParams = @{
                     DisplayName            = $DisplayName
                     Notes                  = $Notes
@@ -104,15 +106,15 @@ function New-TkAppRegistration {
                             Key   = $Cert.RawData
                         }
                     )
+                    Web                    = @{ RedirectUris = @('https://login.microsoftonline.com/common/oauth2/nativeclient') }
                 }
-                $AppRegistration = New-MgApplication @MgApplicationParams
+                $appRegistration = New-MgApplication @MgApplicationParams
             }
-            # 2) Create the new app registration
-            if (-not $AppRegistration) {
+            if (-not $appRegistration) {
                 throw "The app creation failed for '$DisplayName'."
             }
-            Write-AuditLog "App registration created with app Object ID $($AppRegistration.Id)."
-            return $AppRegistration
+            Write-AuditLog "App registration created with app Object ID $($appRegistration.Id)."
+            return $appRegistration
         }
         else {
             throw 'CertThumbprint is required to create an app registration. No other methods are supported yet.'

@@ -16,15 +16,16 @@ Publishes a new or existing Graph Email App with specified configurations.
 ```
 Publish-TkEmailApp [-AppPrefix <String>] -AuthorizedSenderUserName <String> -MailEnabledSendingGroup <String>
  [-CertPrefix <String>] [-CertThumbprint <String>] [-KeyExportPolicy <String>] [-VaultName <String>]
- [-OverwriteVaultSecret] [-ReturnParamSplat] [-DoNotUseDomainSuffix] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+ [-OverwriteVaultSecret] [-ReturnParamSplat] [-DoNotUseDomainSuffix] [-LogOutput <String>]
+ [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### UseExistingApp
 ```
 Publish-TkEmailApp -ExistingAppObjectId <String> -CertPrefix <String> [-CertThumbprint <String>]
  [-KeyExportPolicy <String>] [-VaultName <String>] [-OverwriteVaultSecret] [-ReturnParamSplat]
- [-DoNotUseDomainSuffix] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-DoNotUseDomainSuffix] [-LogOutput <String>] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -311,6 +312,51 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -LogOutput
+If specified, log the output to the console.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WhatIf
+Shows what would happen if the cmdlet runs. The cmdlet is not run.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: wi
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Confirm
+Prompts you for confirmation before running the cmdlet.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: cf
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

@@ -30,14 +30,17 @@ function Set-TkJsonSecret {
     [OutputType([string])]
     param(
         [Parameter(
-            Mandatory = $true, HelpMessage = 'The name under which to store the secret.'
+            Mandatory = $true,
+            HelpMessage = 'The name under which to store the secret. Must be a non-empty string.'
         )]
+        [ValidateNotNullOrEmpty()]
         [string]
         $Name,
         [Parameter(
             Mandatory = $true,
-            HelpMessage = 'The object to convert to JSON and store.'
+            HelpMessage = 'The object to convert to JSON and store. Must be a valid PSObject.'
         )]
+        [ValidateNotNullOrEmpty()]
         [PSObject]
         $InputObject,
         [Parameter(
@@ -59,7 +62,7 @@ function Set-TkJsonSecret {
         [switch]
         $Overwrite
     )
-    if (!($script:LogString)) { Write-AuditLog -Start }else { Write-AuditLog -BeginFunction }
+    if (!($script:logString)) { Write-AuditLog -Start } else { Write-AuditLog -BeginFunction }
     try {
         Write-AuditLog '###############################################'
         # Auto-register vault if missing
@@ -101,4 +104,3 @@ function Set-TkJsonSecret {
         throw
     }
 }
-$WarningPreference = 'Continue'

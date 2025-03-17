@@ -21,6 +21,8 @@
     .PARAMETER DefaultDomain
         (DefaultDomain parameter set) The domain portion to be appended to the group alias (e.g.
         "Alias@DefaultDomain"). This parameter is mandatory when using the 'DefaultDomain' parameter set.
+    .PARAMETER LogOutputPath
+        An optional path to output the log file. If not provided, logs will not be written to a file.
     .EXAMPLE
         PS C:\> New-MailEnabledSendingGroup -Name "SecureSenders" -DefaultDomain "contoso.com"
         Creates a new mail-enabled security group named "SecureSenders" with a primary SMTP address
@@ -67,47 +69,54 @@ function New-MailEnabledSendingGroup {
             HelpMessage = 'Specifies the default domain to construct the primary SMTP address (alias@DefaultDomain) for the group.'
         )]
         [string]
-        $DefaultDomain
+        $DefaultDomain,
+        [Parameter(
+            Mandatory = $false,
+            HelpMessage = 'Optional path to output the log file. If not provided, logs will not be written to a file.'
+        )]
+        [string]
+        $LogOutputPath
     )
-    if (!($script:LogString)) {
+    if (-not $script:LogString) {
         Write-AuditLog -Start
     }
     else {
         Write-AuditLog -BeginFunction
     }
     try {
-        # TODO Add confirmation prompt
-        Connect-TkMsService -ExchangeOnline
-        if (-not $Alias) {
-            $Alias = $Name
-        }
-        if ($PSCmdlet.ParameterSetName -eq 'DefaultDomain') {
-            $PrimarySmtpAddress = "$Alias@$DefaultDomain"
-        }
-        # Check if the distribution group already exists
-        $existingGroup = Get-DistributionGroup -Identity $Name -ErrorAction SilentlyContinue
-        if ($existingGroup) {
-            # Confirm the group is security-enabled
-            if ($existingGroup.GroupType -notmatch 'SecurityEnabled') {
-                throw "Group '$Name' exists but is not SecurityEnabled. Please provide a mail-enabled security group."
+        if ($PSCmdlet.ShouldProcess("Creating or retrieving mail-enabled security group '$Name'")) {
+            Connect-TkMsService -ExchangeOnline
+            if (-not $Alias) {
+                $Alias = $Name
             }
-            Write-AuditLog -Message "Distribution group '$Name' already exists. Returning existing group."
-            return $existingGroup
-        }
-        # Create the distribution group
-        $groupParams = @{
-            Name               = $Name
-            Alias              = $Alias
-            PrimarySmtpAddress = $PrimarySmtpAddress
-            Type               = 'security'
-        }
-        Write-AuditLog -Message "Creating distribution group with parameters: `n$($groupParams | Out-String)"
-        $shouldProcessOperation = 'New-DistributionGroup'
-        $shouldProcessTarget = "'$PrimarySmtpAddress'"
-        if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
-            $group = New-DistributionGroup @groupParams
-            Write-AuditLog -Message "Distribution group created:`n$($group | Out-String)"
-            return $group
+            if ($PSCmdlet.ParameterSetName -eq 'DefaultDomain') {
+                $PrimarySmtpAddress = "$Alias@$DefaultDomain"
+            }
+            # Check if the distribution group already exists
+            $existingGroup = Get-DistributionGroup -Identity $Name -ErrorAction SilentlyContinue
+            if ($existingGroup) {
+                # Confirm the group is security-enabled
+                if ($existingGroup.GroupType -notmatch 'SecurityEnabled') {
+                    throw "Group '$Name' exists but is not SecurityEnabled. Please provide a mail-enabled security group."
+                }
+                Write-AuditLog -Message "Distribution group '$Name' already exists. Returning existing group."
+                return $existingGroup
+            }
+            # Create the distribution group
+            $groupParams = @{
+                Name               = $Name
+                Alias              = $Alias
+                PrimarySmtpAddress = $PrimarySmtpAddress
+                Type               = 'security'
+            }
+            Write-AuditLog -Message "Creating distribution group with parameters: `n$($groupParams | Out-String)"
+            $shouldProcessOperation = 'New-DistributionGroup'
+            $shouldProcessTarget = "'$PrimarySmtpAddress'"
+            if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
+                $group = New-DistributionGroup @groupParams
+                Write-AuditLog -Message "Distribution group created:`n$($group | Out-String)"
+                return $group
+            }
         }
     }
     catch {
@@ -115,5 +124,8 @@ function New-MailEnabledSendingGroup {
     }
     finally {
         Write-AuditLog -EndFunction
+        if ($LogOutputPath) {
+            Write-AuditLog -End -OutputPath $LogOutputPath
+        }
     }
 }

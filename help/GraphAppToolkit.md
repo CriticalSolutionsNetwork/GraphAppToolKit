@@ -1,4 +1,4 @@
----
+﻿---
 Module Name: GraphAppToolkit
 Module Guid: b5426317-5612-4483-b664-beafc448bc2f
 Download Help Link: {{ Update Download Link }}

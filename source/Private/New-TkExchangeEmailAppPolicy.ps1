@@ -26,19 +26,19 @@ function New-TkExchangeEmailAppPolicy {
     param (
         [Parameter(
             Mandatory = $true,
-            HelpMessage = 'The application registration object.'
+            HelpMessage = 'The application registration object. This parameter is mandatory.'
         )]
         [Microsoft.Graph.PowerShell.Models.IMicrosoftGraphApplication]
         $AppRegistration,
         [Parameter(
             Mandatory = $true,
-            HelpMessage = 'The Mail Enabled Sending Group.'
+            HelpMessage = 'The mail-enabled sending group. This parameter is mandatory.'
         )]
         [string]
         $MailEnabledSendingGroup,
         [Parameter(
             Mandatory = $false,
-            HelpMessage = 'Authorized Sender UserName'
+            HelpMessage = 'The username of the authorized sender to be added to the mail-enabled sending group. This parameter is optional.'
         )]
         [string]
         $AuthorizedSenderUserName
@@ -72,7 +72,7 @@ function New-TkExchangeEmailAppPolicy {
         }
     }
     catch {
-        Write-AuditLog -Message "Error creating Exchange Application policy: $_"
+        Write-AuditLog -Message "Error creating Exchange Application policy: $_" -Severity "Error"
         throw
     }
     Write-AuditLog -EndFunction

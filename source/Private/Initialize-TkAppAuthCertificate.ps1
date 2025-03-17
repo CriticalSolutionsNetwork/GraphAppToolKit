@@ -1,4 +1,3 @@
-
 <#
     .SYNOPSIS
     Initializes or retrieves an authentication certificate for the TkApp.
@@ -69,8 +68,8 @@ function Initialize-TkAppAuthCertificate {
     try {
         if ($Thumbprint) {
             # Retrieve an existing certificate
-            $Cert = Get-ChildItem -Path $CertStoreLocation | Where-Object { $_.Thumbprint -eq $Thumbprint }
-            if (-not $Cert) {
+            $cert = Get-ChildItem -Path $CertStoreLocation | Where-Object { $_.Thumbprint -eq $Thumbprint }
+            if (-not $cert) {
                 throw "Certificate with thumbprint $Thumbprint not found in $CertStoreLocation."
             }
             Write-AuditLog "Retrieved certificate with thumbprint $Thumbprint from $CertStoreLocation."
@@ -83,7 +82,7 @@ function Initialize-TkAppAuthCertificate {
                 Get-TkExistingCert `
                 -CertName $Subject `
                 -ErrorAction Stop
-                $Cert = New-SelfSignedCertificate -Subject $Subject -CertStoreLocation $CertStoreLocation `
+                $cert = New-SelfSignedCertificate -Subject $Subject -CertStoreLocation $CertStoreLocation `
                     -KeyExportPolicy $KeyExportPolicy -KeySpec Signature -KeyLength 2048 -KeyAlgorithm RSA -HashAlgorithm SHA256
                 Write-AuditLog "Created new self-signed certificate with subject '$Subject' in $CertStoreLocation."
             }
@@ -93,8 +92,8 @@ function Initialize-TkAppAuthCertificate {
             }
         }
         $output = [PSCustomObject]@{
-            CertThumbprint = $Cert.Thumbprint
-            CertExpires    = $Cert.NotAfter.ToString('yyyy-MM-dd HH:mm:ss')
+            CertThumbprint = $cert.Thumbprint
+            CertExpires    = $cert.NotAfter.ToString('yyyy-MM-dd HH:mm:ss')
         }
         if ($AppName) {
             $output | Add-Member -NotePropertyName 'AppName' -NotePropertyValue $AppName
@@ -102,10 +101,10 @@ function Initialize-TkAppAuthCertificate {
         return $output
     }
     catch {
+        Write-AuditLog -Message "Error occurred: $($_.Exception.Message)" -Severity "Error"
         throw
     }
     finally {
         Write-AuditLog -EndFunction
     }
 }
-

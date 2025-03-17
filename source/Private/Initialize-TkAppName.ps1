@@ -2,17 +2,22 @@
     .SYNOPSIS
     Generates a new application name based on provided prefix, scenario name, and user email.
     .DESCRIPTION
-    The Initialize-TkAppName function constructs an application name using a specified prefix, an optional scenario name,
-    and an optional user email. The generated name includes a domain suffix derived from the environment variable USERDNSDOMAIN.
+    The Initialize-TkAppName function constructs an application name using a specified prefix, an optional scenario name, and an optional user email. The generated name includes a domain suffix derived from the environment variable USERDNSDOMAIN.
     .PARAMETER Prefix
     A short prefix for your app name (2-4 alphanumeric characters). This parameter is mandatory.
     .PARAMETER ScenarioName
-    An optional scenario name to include in the app name (e.g., AuditGraphEmail, MemPolicy, etc.). Defaults to "GraphApp".
+    An optional scenario name to include in the app name (for example, AuditGraphEmail, MemPolicy, etc.). Defaults to "TkEmailApp".
     .PARAMETER UserId
-    An optional user email to append an "As-[username]" suffix to the app name. The email must be in a valid format.
+    An optional user email to append an "As-[username]" suffix to the app name. The email must be provided in a valid format.
+    .PARAMETER DoNotUseDomainSuffix
+    A switch to add a session domain suffix to the app name. If not specified, the domain suffix is derived from the USERDNSDOMAIN environment variable.
+    .INPUTS
+    System.String
+    .OUTPUTS
+    System.String
     .EXAMPLE
     PS> Initialize-TkAppName -Prefix "MSN"
-    Generates an app name with the prefix "MSN" and default scenario name "GraphApp".
+    Generates an app name with the prefix "MSN" and default scenario name "TkEmailApp".
     .EXAMPLE
     PS> Initialize-TkAppName -Prefix "MSN" -ScenarioName "AuditGraphEmail"
     Generates an app name with the prefix "MSN" and scenario name "AuditGraphEmail".
@@ -81,7 +86,7 @@ function Initialize-TkAppName {
         }
         catch {
             $errorMessage = "An error occurred while building the app name: $_"
-            Write-AuditLog $errorMessage
+            Write-AuditLog -Message $errorMessage -Severity "Error"  # include error severity per StyleGuide
             throw $errorMessage
         }
         finally {

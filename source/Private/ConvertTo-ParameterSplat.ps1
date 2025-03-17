@@ -17,16 +17,19 @@
         }
     .NOTES
         Author: DrIOSx
-        Date: YYYY-MM-DD
+        Last Updated: 2025-03-16
 #>
 function ConvertTo-ParameterSplat {
     [CmdletBinding()]
     [OutputType([string])]
     param (
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, HelpMessage = 'The object whose properties will be converted into a parameter splatting hashtable script.')]
+        [ValidateNotNullOrEmpty()]
         [PSObject]$InputObject
     )
     process {
+        Write-AuditLog -Message "Starting ConvertTo-ParameterSplat function." -Severity "Information"
+
         $splatScript = "`$params = @{`n"
         $InputObject.psobject.Properties | ForEach-Object {
             $value = $_.Value
@@ -36,6 +39,8 @@ function ConvertTo-ParameterSplat {
             $splatScript += "    $($_.Name) = $value`n"
         }
         $splatScript += "}"
+
+        Write-AuditLog -Message "Completed ConvertTo-ParameterSplat function." -Severity "Information"
         Write-Output $splatScript
     }
 }
