@@ -27,6 +27,8 @@
         If specified, return the parameter splat for use in other functions.
     .PARAMETER DoNotUseDomainSuffix
         Switch to add session domain suffix to the app name.
+    .PARAMETER LogOutput
+        If specified, log the output to the console.
     .EXAMPLE
         # Permissions required for app registration:
             - 'Application.ReadWrite.All'
@@ -115,7 +117,7 @@
         This cmdlet requires that the user running the cmdlet have the necessary permissions to create the app and connect to Exchange Online.
 #>
 function Publish-TkEmailApp {
-    [CmdletBinding(ConfirmImpact = 'High', DefaultParameterSetName = 'CreateNewApp')]
+    [CmdletBinding(SupportsShouldProcess = $true , ConfirmImpact = 'High', DefaultParameterSetName = 'CreateNewApp')]
     param(
         # REGION: CREATE NEW APP param set
         [Parameter(
@@ -213,7 +215,14 @@ function Publish-TkEmailApp {
                 'Switch to add session domain suffix to the app name.'
         )]
         [switch]
-        $DoNotUseDomainSuffix
+        $DoNotUseDomainSuffix,
+        [Parameter(
+            Mandatory = $false,
+            HelpMessage = `
+                'If specified, log the output to the console to the specified log file.'
+        )]
+        [string]
+        $LogOutput
     )
     begin {
         <#
@@ -256,257 +265,263 @@ function Publish-TkEmailApp {
         }
     }
     process {
-        switch ($PSCmdlet.ParameterSetName) {
-            # ------------------------------------------------------
-            # ============== SCENARIO 1: CREATE NEW APP =============
-            # ------------------------------------------------------
-            'CreateNewApp' {
-                # 2) Connect to both Graph and Exchange
-                Connect-TkMsService `
-                    -MgGraph `
-                    -ExchangeOnline `
-                    -GraphAuthScopes $scopesNeeded
-                # 3) Grab MgContext for tenant info
-                $Context = Get-MgContext
-                if (!$Context) {
-                    throw 'Could not retrieve the context for the tenant.'
-                }
-                # 1) Validate the user (AuthorizedSenderUserName) is in tenant
-                $user = Get-MgUser -Filter "Mail eq '$AuthorizedSenderUserName'"
-                if (-not $user) {
-                    throw "User '$AuthorizedSenderUserName' not found in the tenant."
-                }
-                # 2) Build the app context (Mail.Send permission, etc.)
-                $AppSettings = Initialize-TkRequiredResourcePermissionObject `
-                    -GraphPermissions 'Mail.Send'
-                $appName = Initialize-TkAppName `
-                    -Prefix $AppPrefix `
-                    -UserId $AuthorizedSenderUserName `
-                    -DoNotUseDomainSuffix:$DoNotUseDomainSuffix `
-                    -ErrorAction Stop
-                # Verify if the secret already exists in the vault
-                $existingSecret = Get-TkExistingSecret `
-                    -AppName $appName `
-                    -VaultName $VaultName `
-                    -ErrorAction SilentlyContinue
-                if ($ExistingSecret -and -not $OverwriteVaultSecret) {
-                    throw "Secret '$AppName' already exists in vault '$VaultName'. Use the -OverwriteVaultSecret switch to overwrite it."
-                }
-                # Add relevant properties
-                $AppSettings | Add-Member -NotePropertyName 'User' -NotePropertyValue $user
-                $AppSettings | Add-Member -NotePropertyName 'AppName' -NotePropertyValue $appName
-                if ($CertPrefix) {
-                    $updatedString = $appName -replace '(GraphToolKit-)[A-Za-z0-9]{2,4}(?=-)', "`$1$CertPrefix"
-                    $CertificateSubject = "CN=$updatedString"
-                    $ClientCertPrefix = "$certPrefix"
-                }
-                else {
-                    $CertificateSubject = "CN=$appName"
-                    $ClientCertPrefix = "$AppPrefix"
-                }
-                # 3) Create or retrieve the certificate
-                $AppAuthCertificateParams = @{
-                    AppName         = $AppSettings.AppName
-                    Thumbprint      = $CertThumbprint
-                    Subject         = $CertificateSubject
-                    KeyExportPolicy = $KeyExportPolicy
-                    ErrorAction     = 'Stop'
-                }
-                $CertDetails = Initialize-TkAppAuthCertificate @AppAuthCertificateParams
-                # 4) Show the proposed object
-                $proposedObject = [PSCustomObject]@{
-                    ProposedAppName                 = $AppSettings.AppName
-                    ProposedCertificateSubject      = $CertificateSubject
-                    CertificateThumbprintUsed       = $CertDetails.CertThumbprint
-                    CertExpires                     = $CertDetails.CertExpires
-                    UserPrincipalName               = $user.UserPrincipalName
-                    TenantID                        = $Context.TenantId
-                    Permissions                     = 'Mail.Send'
-                    PermissionType                  = 'Application'
-                    ConsentType                     = 'AllPrincipals'
-                    ExchangePolicyRestrictedToGroup = $MailEnabledSendingGroup
-                }
-                Write-AuditLog 'The following object will be created (or configured) in Azure AD:'
-                Write-AuditLog "`n$($proposedObject | Format-List)`n"
-                # 5) Only proceed if ShouldProcess is allowed
-                try {
-                    # Build a hashtable (or PSCustomObject) of the fields you want:
-                    $notesHash = [ordered]@{
-                        GraphEmailAppFor                  = $AuthorizedSenderUserName
-                        RestrictedToGroup                 = $MailEnabledSendingGroup
-                        AppPermissions                    = 'Mail.Send'
-                        ($ClientCertPrefix + '_ClientIP') = (Invoke-RestMethod ifconfig.me/ip)
-                        ($ClientCertPrefix + '_Host')     = $env:COMPUTERNAME
+        $target = if ($AppPrefix) { $AppPrefix } else { $CertPrefix }
+        $shouldProcessTarget = "Graph Email App $target"
+        $shouldProcessOperation = 'Publish-TkEmailApp'
+        if ($PSCmdlet.ShouldProcess($shouldProcessTarget, $shouldProcessOperation)) {
+            switch ($PSCmdlet.ParameterSetName) {
+                # ------------------------------------------------------
+                # ============== SCENARIO 1: CREATE NEW APP =============
+                # ------------------------------------------------------
+                'CreateNewApp' {
+                    # 2) Connect to both Graph and Exchange
+                    Connect-TkMsService `
+                        -MgGraph `
+                        -ExchangeOnline `
+                        -GraphAuthScopes $scopesNeeded
+                    # 3) Grab MgContext for tenant info
+                    $Context = Get-MgContext
+                    if (!$Context) {
+                        throw 'Could not retrieve the context for the tenant.'
                     }
-                    # Convert that hashtable to a JSON string:
-                    $Notes = $notesHash | ConvertTo-Json #-Compress
-                    # 6) Register the new enterprise app for Graph
-                    $AppRegistrationParams = @{
-                        DisplayName                = $AppSettings.AppName
-                        CertThumbprint             = $CertDetails.CertThumbprint
-                        RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
-                        SignInAudience             = 'AzureADMyOrg'
-                        Notes                      = $Notes
-                        ErrorAction                = 'Stop'
+                    # 1) Validate the user (AuthorizedSenderUserName) is in tenant
+                    $user = Get-MgUser -Filter "Mail eq '$AuthorizedSenderUserName'"
+                    if (-not $user) {
+                        throw "User '$AuthorizedSenderUserName' not found in the tenant."
                     }
-                    $appRegistration = New-TkAppRegistration @AppRegistrationParams
-                    # 7) Initialize the service principal, permissions, etc.
-                    $AppSpRegistrationParams = @{
-                        AppRegistration            = $appRegistration
-                        Context                    = $Context
-                        RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
-                        Scopes                     = $permissionsObject
-                        AuthMethod                 = 'Certificate'
-                        CertThumbprint             = $CertDetails.CertThumbprint
-                        ErrorAction                = 'Stop'
+                    # 2) Build the app context (Mail.Send permission, etc.)
+                    $AppSettings = Initialize-TkRequiredResourcePermissionObject `
+                        -GraphPermissions 'Mail.Send'
+                    $appName = Initialize-TkAppName `
+                        -Prefix $AppPrefix `
+                        -UserId $AuthorizedSenderUserName `
+                        -DoNotUseDomainSuffix:$DoNotUseDomainSuffix `
+                        -ErrorAction Stop
+                    # Verify if the secret already exists in the vault
+                    $existingSecret = Get-TkExistingSecret `
+                        -AppName $appName `
+                        -VaultName $VaultName `
+                        -ErrorAction SilentlyContinue
+                    if ($ExistingSecret -and -not $OverwriteVaultSecret) {
+                        throw "Secret '$AppName' already exists in vault '$VaultName'. Use the -OverwriteVaultSecret switch to overwrite it."
                     }
-                    $ConsentUrl = New-TkAppSpOauth2Registration @AppSpRegistrationParams
-                    [void](Read-Host 'Provide admin consent now, or copy the url and provide admin consent later. Press Enter to continue.')
-                    # 8) Create the Exchange Online policy restricting send
-                    New-TkExchangeEmailAppPolicy `
-                        -AppRegistration $appRegistration `
-                        -MailEnabledSendingGroup $MailEnabledSendingGroup `
-                        -AuthorizedSenderUserName $AuthorizedSenderUserName
-                    # 9) Build final output object
-                    $EmailAppParams = @{
-                        AppId                  = $appRegistration.AppId
-                        Id                     = $appRegistration.Id
-                        AppName                = "$($AppSettings.AppName)"
-                        CertificateSubject     = $CertificateSubject
-                        AppRestrictedSendGroup = $MailEnabledSendingGroup
-                        CertExpires            = $CertDetails.CertExpires
-                        CertThumbprint         = $CertDetails.CertThumbprint
-                        ConsentUrl             = $ConsentUrl
-                        DefaultDomain          = $MailEnabledSendingGroup.Split('@')[1]
-                        SendAsUser             = $AppSettings.User.UserPrincipalName.Split('@')[0]
-                        SendAsUserEmail        = $AppSettings.User.UserPrincipalName
-                        TenantID               = $Context.TenantId
+                    # Add relevant properties
+                    $AppSettings | Add-Member -NotePropertyName 'User' -NotePropertyValue $user
+                    $AppSettings | Add-Member -NotePropertyName 'AppName' -NotePropertyValue $appName
+                    if ($CertPrefix) {
+                        $updatedString = $appName -replace '(GraphToolKit-)[A-Za-z0-9]{2,4}(?=-)', "`$1$CertPrefix"
+                        $CertificateSubject = "CN=$updatedString"
+                        $ClientCertPrefix = "$certPrefix"
                     }
-                    [TkEmailAppParams]$graphEmailApp = Initialize-TkEmailAppParamsObject @EmailAppParams
-                    # 10) Store it as JSON in the vault
-                    $JsonSecretParams = @{
-                        Name        = "CN=$($AppSettings.AppName)"
-                        InputObject = $graphEmailApp
-                        VaultName   = $VaultName
-                        Overwrite   = $OverwriteVaultSecret
-                        ErrorAction = 'Stop'
+                    else {
+                        $CertificateSubject = "CN=$appName"
+                        $ClientCertPrefix = "$AppPrefix"
                     }
-                    $savedSecretName = Set-TkJsonSecret @JsonSecretParams
-                    Write-AuditLog "Secret '$savedSecretName' saved to vault '$VaultName'."
-                }
-                catch {
-                    throw
-                }
-            }
-            # ---------------------------------------------------------
-            # ============ SCENARIO 2: USE EXISTING APP ===============
-            # ---------------------------------------------------------
-            'UseExistingApp' {
-                # Grab MgContext for tenant info
-                Connect-TkMsService `
-                    -MgGraph `
-                    -GraphAuthScopes $scopesNeeded
-                $Context = Get-MgContext
-                if (!$Context) {
-                    throw 'Could not retrieve the context for the tenant.'
-                }
-                $ClientCertPrefix = "$CertPrefix"
-                # Retrieve the existing app registration by AppId
-                Write-AuditLog "Looking up existing app with ObjectId: $ExistingAppObjectId"
-                # Get-MgApplication uses the application object id, not the app id
-                $existingApp = Get-MgApplication -ApplicationId $ExistingAppObjectId -ErrorAction Stop
-                if (-not $existingApp) {
-                    throw "Could not find an existing application with AppId '$ExistingAppObjectId'."
-                }
-                if (!($existingApp | Where-Object { $_.DisplayName -like 'GraphToolKit-*' })) {
-                    throw "The existing app with AppId '$ExistingAppObjectId' is not a GraphToolKit app."
-                }
-                $updatedString = $existingApp.DisplayName -replace '(GraphToolKit-)[A-Za-z0-9]{2,4}(?=-)', "`$1$CertPrefix"
-                # Retrieve or create the certificate
-                $certParams = @{
-                    AppName         = $updatedString
-                    Thumbprint      = $CertThumbprint
-                    Subject         = "CN=$updatedString"
-                    KeyExportPolicy = $KeyExportPolicy
-                    ErrorAction     = 'Stop'
-                }
-                $certDetails = Initialize-TkAppAuthCertificate @certParams
-                Write-AuditLog "Attaching certificate (Thumbprint: $($certDetails.CertThumbprint)) to existing app '$($existingApp.DisplayName)'."
-                # Merge or append the new certificate to the existing KeyCredentials
-                $currentKeys = $existingApp.KeyCredentials
-                $newCert = @{
-                    Type        = 'AsymmetricX509Cert'
-                    Usage       = 'Verify'
-                    Key         = (Get-ChildItem -Path Cert:\CurrentUser\My |
-                        Where-Object { $_.Thumbprint -eq $certDetails.CertThumbprint }).RawData
-                    DisplayName = "CN=$updatedString"
-                }
-                # If you want to specify start/end date, you can do so as well:
-                # $newCert.StartDateTime = (Get-Date)
-                # $newCert.EndDateTime   = (Get-Date).AddYears(1)
-                # Append the new cert to existing
-                $mergedKeys = $currentKeys + $newCert
-                $existingNotesRaw = $existingApp.Notes
-                if (-not [string]::IsNullOrEmpty($existingNotesRaw)) {
+                    # 3) Create or retrieve the certificate
+                    $AppAuthCertificateParams = @{
+                        AppName         = $AppSettings.AppName
+                        Thumbprint      = $CertThumbprint
+                        Subject         = $CertificateSubject
+                        KeyExportPolicy = $KeyExportPolicy
+                        ErrorAction     = 'Stop'
+                    }
+                    $CertDetails = Initialize-TkAppAuthCertificate @AppAuthCertificateParams
+                    # 4) Show the proposed object
+                    $proposedObject = [PSCustomObject]@{
+                        ProposedAppName                 = $AppSettings.AppName
+                        ProposedCertificateSubject      = $CertificateSubject
+                        CertificateThumbprintUsed       = $CertDetails.CertThumbprint
+                        CertExpires                     = $CertDetails.CertExpires
+                        UserPrincipalName               = $user.UserPrincipalName
+                        TenantID                        = $Context.TenantId
+                        Permissions                     = 'Mail.Send'
+                        PermissionType                  = 'Application'
+                        ConsentType                     = 'AllPrincipals'
+                        ExchangePolicyRestrictedToGroup = $MailEnabledSendingGroup
+                    }
+                    Write-AuditLog 'The following object will be created (or configured) in Azure AD:'
+                    Write-AuditLog ($proposedObject | Format-List | Out-String)
+                    # 5) Only proceed if ShouldProcess is allowed
                     try {
-                        $notesObject = $existingNotesRaw | ConvertFrom-Json -ErrorAction Stop
+                        # Build a hashtable (or PSCustomObject) of the fields you want:
+                        $notesHash = [ordered]@{
+                            GraphEmailAppFor                  = $AuthorizedSenderUserName
+                            RestrictedToGroup                 = $MailEnabledSendingGroup
+                            AppPermissions                    = 'Mail.Send'
+                            ($ClientCertPrefix + '_ClientIP') = (Invoke-RestMethod ifconfig.me/ip)
+                            ($ClientCertPrefix + '_Host')     = $env:COMPUTERNAME
+                        }
+                        # Convert that hashtable to a JSON string:
+                        $Notes = $notesHash | ConvertTo-Json #-Compress
+                        # 6) Register the new enterprise app for Graph
+                        $AppRegistrationParams = @{
+                            DisplayName                = $AppSettings.AppName
+                            CertThumbprint             = $CertDetails.CertThumbprint
+                            RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
+                            SignInAudience             = 'AzureADMyOrg'
+                            Notes                      = $Notes
+                            ErrorAction                = 'Stop'
+                        }
+                        $appRegistration = New-TkAppRegistration @AppRegistrationParams
+                        # 7) Initialize the service principal, permissions, etc.
+                        $AppSpRegistrationParams = @{
+                            AppRegistration            = $appRegistration
+                            Context                    = $Context
+                            RequiredResourceAccessList = $AppSettings.RequiredResourceAccessList
+                            Scopes                     = $permissionsObject
+                            AuthMethod                 = 'Certificate'
+                            CertThumbprint             = $CertDetails.CertThumbprint
+                            ErrorAction                = 'Stop'
+                        }
+                        $ConsentUrl = New-TkAppSpOauth2Registration @AppSpRegistrationParams
+                        [void](Read-Host 'Provide admin consent now, or copy the url and provide admin consent later. Press Enter to continue.')
+                        # 8) Create the Exchange Online policy restricting send
+                        New-TkExchangeEmailAppPolicy `
+                            -AppRegistration $appRegistration `
+                            -MailEnabledSendingGroup $MailEnabledSendingGroup `
+                            -AuthorizedSenderUserName $AuthorizedSenderUserName
+                        # 9) Build final output object
+                        $EmailAppParams = @{
+                            AppId                  = $appRegistration.AppId
+                            Id                     = $appRegistration.Id
+                            AppName                = "$($AppSettings.AppName)"
+                            CertificateSubject     = $CertificateSubject
+                            AppRestrictedSendGroup = $MailEnabledSendingGroup
+                            CertExpires            = $CertDetails.CertExpires
+                            CertThumbprint         = $CertDetails.CertThumbprint
+                            ConsentUrl             = $ConsentUrl
+                            DefaultDomain          = $MailEnabledSendingGroup.Split('@')[1]
+                            SendAsUser             = $AppSettings.User.UserPrincipalName.Split('@')[0]
+                            SendAsUserEmail        = $AppSettings.User.UserPrincipalName
+                            TenantID               = $Context.TenantId
+                        }
+                        [TkEmailAppParams]$graphEmailApp = Initialize-TkEmailAppParamsObject @EmailAppParams
+                        # 10) Store it as JSON in the vault
+                        $JsonSecretParams = @{
+                            Name        = "CN=$($AppSettings.AppName)"
+                            InputObject = $graphEmailApp
+                            VaultName   = $VaultName
+                            Overwrite   = $OverwriteVaultSecret
+                            ErrorAction = 'Stop'
+                        }
+                        $savedSecretName = Set-TkJsonSecret @JsonSecretParams
+                        Write-AuditLog "Secret '$savedSecretName' saved to vault '$VaultName'."
                     }
                     catch {
-                        Write-AuditLog 'Existing .Notes was not valid JSON; ignoring it.'
+                        throw
+                    }
+                }
+                # ---------------------------------------------------------
+                # ============ SCENARIO 2: USE EXISTING APP ===============
+                # ---------------------------------------------------------
+                'UseExistingApp' {
+                    # Grab MgContext for tenant info
+                    Connect-TkMsService `
+                        -MgGraph `
+                        -GraphAuthScopes $scopesNeeded
+                    $Context = Get-MgContext
+                    if (!$Context) {
+                        throw 'Could not retrieve the context for the tenant.'
+                    }
+                    $ClientCertPrefix = "$CertPrefix"
+                    # Retrieve the existing app registration by AppId
+                    Write-AuditLog "Looking up existing app with ObjectId: $ExistingAppObjectId"
+                    # Get-MgApplication uses the application object id, not the app id
+                    $existingApp = Get-MgApplication -ApplicationId $ExistingAppObjectId -ErrorAction Stop
+                    if (-not $existingApp) {
+                        throw "Could not find an existing application with AppId '$ExistingAppObjectId'."
+                    }
+                    if (!($existingApp | Where-Object { $_.DisplayName -like 'GraphToolKit-*' })) {
+                        throw "The existing app with AppId '$ExistingAppObjectId' is not a GraphToolKit app."
+                    }
+                    $updatedString = $existingApp.DisplayName -replace '(GraphToolKit-)[A-Za-z0-9]{2,4}(?=-)', "`$1$CertPrefix"
+                    # Retrieve or create the certificate
+                    $certParams = @{
+                        AppName         = $updatedString
+                        Thumbprint      = $CertThumbprint
+                        Subject         = "CN=$updatedString"
+                        KeyExportPolicy = $KeyExportPolicy
+                        ErrorAction     = 'Stop'
+                    }
+                    $certDetails = Initialize-TkAppAuthCertificate @certParams
+                    Write-AuditLog "Attaching certificate (Thumbprint: $($certDetails.CertThumbprint)) to existing app '$($existingApp.DisplayName)'."
+                    # Merge or append the new certificate to the existing KeyCredentials
+                    $currentKeys = $existingApp.KeyCredentials
+                    $newCert = @{
+                        Type        = 'AsymmetricX509Cert'
+                        Usage       = 'Verify'
+                        Key         = (Get-ChildItem -Path Cert:\CurrentUser\My |
+                            Where-Object { $_.Thumbprint -eq $certDetails.CertThumbprint }).RawData
+                        DisplayName = "CN=$updatedString"
+                    }
+                    # If you want to specify start/end date, you can do so as well:
+                    # $newCert.StartDateTime = (Get-Date)
+                    # $newCert.EndDateTime   = (Get-Date).AddYears(1)
+                    # Append the new cert to existing
+                    $mergedKeys = $currentKeys + $newCert
+                    $existingNotesRaw = $existingApp.Notes
+                    if (-not [string]::IsNullOrEmpty($existingNotesRaw)) {
+                        try {
+                            $notesObject = $existingNotesRaw | ConvertFrom-Json -ErrorAction Stop
+                        }
+                        catch {
+                            Write-AuditLog 'Existing .Notes was not valid JSON; ignoring it.'
+                            $notesObject = [ordered]@{}
+                        }
+                    }
+                    else {
                         $notesObject = [ordered]@{}
                     }
-                }
-                else {
-                    $notesObject = [ordered]@{}
-                }
-                # Add your new properties each time the function runs
-                $notesObject | Add-Member -NotePropertyName ($ClientCertPrefix + '_ClientIP') -NotePropertyValue (Invoke-RestMethod ifconfig.me/ip)
-                $notesObject | Add-Member -NotePropertyName ($ClientCertPrefix + '_Host') -NotePropertyValue $env:COMPUTERNAME
-                $updatedNotes = $notesObject | ConvertTo-Json #-Compress
-                if (($updatedNotes.length -gt 1024)) {
-                    throw 'The Notes object is too large. Please reduce the size of the Notes object.'
-                }
-                try {
-                    # Update the application with the new KeyCredentials array
-                    $updateAppParams = @{
-                        ApplicationId  = $existingApp.Id
-                        KeyCredentials = $mergedKeys
-                        Notes          = $updatedNotes
-                        ErrorAction    = 'Stop'
+                    # Add your new properties each time the function runs
+                    $notesObject | Add-Member -NotePropertyName ($clientCertPrefix + '_ClientIP') -NotePropertyValue (Invoke-RestMethod ifconfig.me/ip)
+                    $notesObject | Add-Member -NotePropertyName ($clientCertPrefix + '_Host') -NotePropertyValue $env:COMPUTERNAME
+                    $updatedNotes = $notesObject | ConvertTo-Json #-Compress
+                    if (($updatedNotes.length -gt 1024)) {
+                        throw 'The Notes object is too large. Please reduce the size of the Notes object.'
                     }
-                    Update-MgApplication @updateAppParams | Out-Null
-                    # Build an output object similar to "new" scenario
-                    $EmailAppParams = @{
-                        AppId                  = $existingApp.AppId
-                        Id                     = $existingApp.Id
-                        AppName                = "$updatedString"
-                        CertificateSubject     = "CN=$updatedString"
-                        AppRestrictedSendGroup = $notesObject.RestrictedToGroup
-                        CertExpires            = $CertDetails.CertExpires
-                        CertThumbprint         = $CertDetails.CertThumbprint
-                        ConsentUrl             = $null
-                        DefaultDomain          = ($notesObject.GraphEmailAppFor.Split('@')[1])
-                        SendAsUser             = ($notesObject.GraphEmailAppFor.Split('@')[0])
-                        SendAsUserEmail        = $notesObject.GraphEmailAppFor
-                        TenantID               = $Context.TenantID
+                    try {
+                        # Update the application with the new KeyCredentials array
+                        $updateAppParams = @{
+                            ApplicationId  = $existingApp.Id
+                            KeyCredentials = $mergedKeys
+                            Notes          = $updatedNotes
+                            ErrorAction    = 'Stop'
+                        }
+                        Update-MgApplication @updateAppParams | Out-Null
+                        # Build an output object similar to "new" scenario
+                        $emailAppParams = @{
+                            AppId                  = $existingApp.AppId
+                            Id                     = $existingApp.Id
+                            AppName                = "$updatedString"
+                            CertificateSubject     = "CN=$updatedString"
+                            AppRestrictedSendGroup = $notesObject.RestrictedToGroup
+                            CertExpires            = $certDetails.CertExpires
+                            CertThumbprint         = $certDetails.CertThumbprint
+                            ConsentUrl             = $null
+                            DefaultDomain          = ($notesObject.GraphEmailAppFor.Split('@')[1])
+                            SendAsUser             = ($notesObject.GraphEmailAppFor.Split('@')[0])
+                            SendAsUserEmail        = $notesObject.GraphEmailAppFor
+                            TenantID               = $context.TenantId
+                        }
+                        [TkEmailAppParams]$graphEmailApp = Initialize-TkEmailAppParamsObject @emailAppParams
+                        # Store updated info in the vault
+                        $jsonSecretParams = @{
+                            Name        = "CN=$updatedString"
+                            InputObject = $graphEmailApp
+                            VaultName   = $VaultName
+                            Overwrite   = $OverwriteVaultSecret
+                            ErrorAction = 'Stop'
+                        }
+                        $savedSecretName = Set-TkJsonSecret @JsonSecretParams
+                        Write-AuditLog "Secret for existing app saved as '$savedSecretName' in vault '$VaultName'."
                     }
-                    [TkEmailAppParams]$graphEmailApp = Initialize-TkEmailAppParamsObject @EmailAppParams
-                    # Store updated info in the vault
-                    $JsonSecretParams = @{
-                        Name        = "CN=$updatedString"
-                        InputObject = $graphEmailApp
-                        VaultName   = $VaultName
-                        Overwrite   = $OverwriteVaultSecret
-                        ErrorAction = 'Stop'
+                    catch {
+                        throw
                     }
-                    $savedSecretName = Set-TkJsonSecret @JsonSecretParams
-                    Write-AuditLog "Secret for existing app saved as '$savedSecretName' in vault '$VaultName'."
                 }
-                catch {
-                    throw
-                }
-            }
-        } # end switch
+            } # end switch
+        }
+
     }
     end {
         if ($ReturnParamSplat -and $graphEmailApp) {
@@ -515,7 +530,9 @@ function Publish-TkEmailApp {
         elseif ($graphEmailApp) {
             return $graphEmailApp
         }
-        Write-AuditLog -EndFunction
+        if ($LogOutput) {
+            Write-AuditLog -End -LogOutput $LogOutput
+        }
     }
 }
 

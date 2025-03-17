@@ -18,7 +18,7 @@
     .PARAMETER Message
         The message string to log.
     .PARAMETER Severity
-        The severity of the log message. Accepted values are 'Information', 'Warning', and 'Error'. Defaults to 'Information'.
+        The severity of the log message. Accepted values are 'Information', 'Warning', 'Error'. Defaults to 'Verbose'.
     .PARAMETER Start
         Initializes the script-wide log variable and sets the message to "Begin [FunctionName] Log.", where FunctionName is the name of the calling function.
     .PARAMETER End
@@ -30,7 +30,7 @@
     .EXAMPLE
         Write-AuditLog -Message "This is a test message."
 
-        Writes a test message with the default severity (Information) to the console and adds it to the log variable.
+        Writes a test message with the default severity (Verbose) to the console and adds it to the log variable.
     .EXAMPLE
         Write-AuditLog -Message "This is a warning message." -Severity "Warning"
 
@@ -92,6 +92,7 @@ function Write-AuditLog {
             ParameterSetName = 'BeginFunction'
         )]
         [switch]$BeginFunction,
+        ###
         [Parameter(
             Mandatory = $false,
             ParameterSetName = 'EndFunction'
@@ -113,15 +114,15 @@ function Write-AuditLog {
     begin {
         $ErrorActionPreference = 'SilentlyContinue'
         # Define variables to hold information about the command that was invoked.
-        $ModuleName = $Script:MyInvocation.MyCommand.Name -replace '\..*'
+        $moduleName = $Script:MyInvocation.MyCommand.Name -replace '\..*'
         $callStack = Get-PSCallStack
         if ($callStack.Count -gt 1) {
-            $FuncName = $callStack[1].Command
+            $funcName = $callStack[1].Command
         }
         else {
-            $FuncName = 'DirectCall'  # Or any other default name you prefer
+            $funcName = 'DirectCall'  # Or any other default name you prefer
         }
-        $ModuleVer = $MyInvocation.MyCommand.Version.ToString()
+        $moduleVer = $MyInvocation.MyCommand.Version.ToString()
         # Set the error action preference to continue.
         $ErrorActionPreference = 'Continue'
     }
@@ -130,50 +131,50 @@ function Write-AuditLog {
             if (-not $Start -and -not (Test-Path variable:script:LogString)) {
                 throw "The logging variable is not initialized. Please call Write-AuditLog with the -Start switch or ensure $script:LogString is set."
             }
-            $Function = $($FuncName + '.v' + $ModuleVer)
+            $function = $($funcName + '.v' + $moduleVer)
             if ($Start) {
                 $script:LogString = @()
-                $Message = '+++ Begin Log +++ | ' + $Function + ' |'
+                $Message = '+++ Begin Log +++ | ' + $function + ' |'
             }
             elseif ($BeginFunction) {
-                $Message = '>>> Begin Function Log >>> | ' + $Function + ' |'
+                $Message = '>>> Begin Function Log >>> | ' + $function + ' |'
             }
             $logEntry = [pscustomobject]@{
                 Time      = ((Get-Date).ToString('yyyy-MM-dd hh:mmTss'))
-                Module    = $ModuleName
+                Module    = $moduleName
                 PSVersion = ($PSVersionTable.PSVersion).ToString()
                 PSEdition = ($PSVersionTable.PSEdition).ToString()
                 IsAdmin   = $(Test-IsAdmin)
                 User      = "$Env:USERDOMAIN\$Env:USERNAME"
                 HostName  = $Env:COMPUTERNAME
-                InvokedBy = $Function
+                InvokedBy = $function
                 Severity  = $Severity
                 Message   = $Message
                 RunID     = -1
             }
             if ($BeginFunction) {
-                $maxRunID = ($script:LogString | Where-Object { $_.InvokedBy -eq $Function } | Measure-Object -Property RunID -Maximum).Maximum
+                $maxRunID = ($script:LogString | Where-Object { $_.InvokedBy -eq $function } | Measure-Object -Property RunID -Maximum).Maximum
                 if ($null -eq $maxRunID) { $maxRunID = -1 }
                 $logEntry.RunID = $maxRunID + 1
             }
             else {
-                $lastRunID = ($script:LogString | Where-Object { $_.InvokedBy -eq $Function } | Select-Object -Last 1).RunID
+                $lastRunID = ($script:LogString | Where-Object { $_.InvokedBy -eq $function } | Select-Object -Last 1).RunID
                 if ($null -eq $lastRunID) { $lastRunID = 0 }
                 $logEntry.RunID = $lastRunID
             }
             if ($EndFunction) {
-                $FunctionStart = "$((($script:LogString | Where-Object {$_.InvokedBy -eq $Function -and $_.RunId -eq $lastRunID } | Sort-Object Time)[0]).Time)"
-                $startTime = ([DateTime]::ParseExact("$FunctionStart", 'yyyy-MM-dd hh:mmTss', $null))
+                $functionStart = "$((($script:LogString | Where-Object {$_.InvokedBy -eq $function -and $_.RunId -eq $lastRunID } | Sort-Object Time)[0]).Time)"
+                $startTime = ([DateTime]::ParseExact("$functionStart", 'yyyy-MM-dd hh:mmTss', $null))
                 $endTime = Get-Date
                 $timeTaken = $endTime - $startTime
-                $Message = '<<< End Function Log <<< | ' + $Function + ' | Runtime: ' + "$($timeTaken.Minutes) min $($timeTaken.Seconds) sec"
+                $Message = '<<< End Function Log <<< | ' + $function + ' | Runtime: ' + "$($timeTaken.Minutes) min $($timeTaken.Seconds) sec"
                 $logEntry.Message = $Message
             }
             elseif ($End) {
                 $startTime = ([DateTime]::ParseExact($($script:LogString[0].Time), 'yyyy-MM-dd hh:mmTss', $null))
                 $endTime = Get-Date
                 $timeTaken = $endTime - $startTime
-                $Message = '--- End Log   | ' + $Function + ' | Runtime: ' + "$($timeTaken.Minutes) min $($timeTaken.Seconds) sec"
+                $Message = '--- End Log   | ' + $function + ' | Runtime: ' + "$($timeTaken.Minutes) min $($timeTaken.Seconds) sec"
                 $logEntry.Message = $Message
             }
             $script:LogString += $logEntry
@@ -181,9 +182,9 @@ function Write-AuditLog {
                 'Warning' {
                     Write-Warning ('[WARNING] ! ' + $Message)
                 }
-                'Error' { Write-Error ('[ERROR] X - ' + "[$((Get-Date).ToString('yyyy.MM.dd HH:mm:ss.fff'))] " + $FuncName + ' ' + $Message) -ErrorAction Continue }
+                'Error' { Write-Error ('[ERROR] X - ' + "[$((Get-Date).ToString('yyyy.MM.dd HH:mm:ss.fff'))] " + $funcName + ' ' + $Message) -ErrorAction Continue }
                 'Verbose' { Write-Verbose ('~ ' + "[$((Get-Date).ToString('yyyy.MM.dd HH:mm:ss.fff'))] " + $Message) }
-                Default { Write-Information ("[NFO] [$((Get-Date).ToString('yyyy.MM.dd HH:mm:ss.fff'))] " + $Message) -InformationAction Continue }
+                Default { Write-Information ("[NFO] [$((Get-Date).ToString('yyyy.MM.dd HH:mm:ss.fff'))] " + $Message) }
             }
         }
         catch {

@@ -30,17 +30,17 @@ function Connect-TkMsService {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     param (
         [Parameter(
-            HelpMessage = 'Connect to Microsoft Graph.'
+            HelpMessage = 'Switch to connect to Microsoft Graph.'
         )]
         [Switch]
         $MgGraph,
         [Parameter(
-            HelpMessage = 'Graph Scopes.'
+            HelpMessage = 'Array of scopes required for Microsoft Graph authentication.'
         )]
         [String[]]
         $GraphAuthScopes,
         [Parameter(
-            HelpMessage = 'Connect to Exchange Online.'
+            HelpMessage = 'Switch to connect to Exchange Online.'
         )]
         [Switch]
         $ExchangeOnline
@@ -68,14 +68,6 @@ function Connect-TkMsService {
                     Get-MgUser -Top 1 -ErrorAction Stop | Out-Null
                     $ContextMg = Get-MgContext -ErrorAction Stop
                     # Check required scopes
-                    <#
-                        $scopesNeeded = @(
-                            'Application.ReadWrite.All',
-                            'DelegatedPermissionGrant.ReadWrite.All',
-                            'Directory.ReadWrite.All',
-                            'RoleManagement.ReadWrite.Directory'
-                        )
-                    #>
                     $scopesNeeded = $GraphAuthScopes
                     $missing = $scopesNeeded | Where-Object { $ContextMg.Scopes -notcontains $_ }
                     if ($missing) {
@@ -103,7 +95,7 @@ function Connect-TkMsService {
                         Remove-MgContext -ErrorAction SilentlyContinue
                         Write-AuditLog 'Creating a new Microsoft Graph session.'
                         Connect-MgGraph -ContextScope Process -Scopes $scopesNeeded  `
-                            -ErrorAction Stop
+                            -ErrorAction Stop | Out-Null
                         Write-AuditLog 'Connected to Microsoft Graph.'
                     }
                 }
@@ -111,7 +103,7 @@ function Connect-TkMsService {
                     # No valid session, so just connect
                     Write-AuditLog 'No valid Microsoft Graph session found. Connecting...'
                     Connect-MgGraph -ContextScope Process -Scopes $scopesNeeded `
-                        -ErrorAction Stop
+                        -ErrorAction Stop | Out-Null
                     Write-AuditLog 'Connected to Microsoft Graph.'
                 }
             }

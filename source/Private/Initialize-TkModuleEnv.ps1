@@ -4,17 +4,21 @@
     .DESCRIPTION
     The Initialize-TkModuleEnv function installs and imports specified PowerShell modules, either public or pre-release versions, based on the provided parameters. It also ensures that the PowerShellGet module is up-to-date and handles the installation scope, requiring elevation for 'AllUsers' scope. The function logs the installation and import process using Write-AuditLog.
     .PARAMETER PublicModuleNames
-    An array of public module names to be installed.
+    An array of public module names to be installed and imported from the PowerShell Gallery. Each module must exist in the gallery.
     .PARAMETER PublicRequiredVersions
-    An array of required versions corresponding to the public module names.
+    An array of required versions corresponding to the public module names. Must match the count of PublicModuleNames.
     .PARAMETER PrereleaseModuleNames
-    An array of pre-release module names to be installed.
+    An array of pre-release module names to be installed from the PowerShell Gallery. Used for modules in preview/beta state.
     .PARAMETER PrereleaseRequiredVersions
-    An array of required versions corresponding to the pre-release module names.
+    An array of required versions corresponding to the pre-release module names. Must match the count of PrereleaseModuleNames.
     .PARAMETER Scope
-    The installation scope, either 'AllUsers' or 'CurrentUser'.
+    The installation scope, either 'AllUsers' (requires elevation) or 'CurrentUser' (default, no elevation needed).
     .PARAMETER ImportModuleNames
-    An optional array of module names to be imported after installation.
+    An optional array of module names to be imported after installation. Useful for importing specific modules from a larger package.
+    .INPUTS
+    None. This function does not accept pipeline input.
+    .OUTPUTS
+    None. This function does not generate output.
     .EXAMPLE
     $params1 = @{
         PublicModuleNames      = "PSnmap","Microsoft.Graph"
@@ -43,47 +47,67 @@ function Initialize-TkModuleEnv {
     param(
         [Parameter(
             ParameterSetName = 'Public',
-            Mandatory
+            Mandatory,
+            HelpMessage = 'Array of public module names to be installed from the PowerShell Gallery'
         )]
         [string[]]
         $PublicModuleNames,
+
         [Parameter(
             ParameterSetName = 'Public',
-            Mandatory
+            Mandatory,
+            HelpMessage = 'Array of required versions corresponding to the public module names'
         )]
         [string[]]
         $PublicRequiredVersions,
+
         [Parameter(
             ParameterSetName = 'Prerelease',
-            Mandatory
+            Mandatory,
+            HelpMessage = 'Array of pre-release module names to be installed from the PowerShell Gallery'
         )]
         [string[]]
         $PrereleaseModuleNames,
+
         [Parameter(
             ParameterSetName = 'Prerelease',
-            Mandatory
+            Mandatory,
+            HelpMessage = 'Array of required versions corresponding to the pre-release module names'
         )]
         [string[]]
         $PrereleaseRequiredVersions,
+
+        [Parameter(
+            HelpMessage = 'Installation scope, either AllUsers (requires admin) or CurrentUser'
+        )]
         [ValidateSet('AllUsers', 'CurrentUser')]
         [string]
         $Scope,
+
+        [Parameter(
+            HelpMessage = 'Optional array of module names to import after installation (useful for submodules)'
+        )]
         [string[]]
         $ImportModuleNames = $null
     )
+
     if (-not $script:LogString) {
         Write-AuditLog -Start
-    } else {
+    }
+    else {
         Write-AuditLog -BeginFunction
     }
     Write-AuditLog '###########################################################'
+
     try {
         # If Microsoft.Graph is being installed, raise function limit if < 8192.
         if (($PublicModuleNames -match 'Microsoft.Graph') -or ($PrereleaseModuleNames -match 'Microsoft.Graph')) {
             if ($script:MaximumFunctionCount -lt 8192) {
                 $script:MaximumFunctionCount = 8192
+                Write-AuditLog "Increased maximum function count to $script:MaximumFunctionCount for Microsoft.Graph" -Severity Information
             }
         }
+
         # Step 1: Check/Update PowerShellGet if needed
         $psGetModules = Get-Module -Name PowerShellGet -ListAvailable
         $hasNonDefaultVer = $false
@@ -93,10 +117,12 @@ function Initialize-TkModuleEnv {
                 break
             }
         }
+
         if ($hasNonDefaultVer) {
             # Import the latest version
             $latestModule = $psGetModules | Sort-Object Version -Descending | Select-Object -First 1
             Import-Module -Name $latestModule.Name -RequiredVersion $latestModule.Version -ErrorAction Stop
+            Write-AuditLog "Imported PowerShellGet version $($latestModule.Version)" -Severity Information
         }
         else {
             if (-not(Test-IsAdmin)) {
@@ -104,14 +130,16 @@ function Initialize-TkModuleEnv {
                 throw 'Elevation required to update PowerShellGet!'
             }
             else {
-                Write-AuditLog 'Updating PowerShellGet...'
+                Write-AuditLog 'Updating PowerShellGet...' -Severity Information
                 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
                 Install-Module PowerShellGet -AllowClobber -Force -ErrorAction Stop
                 $psGetModules = Get-Module -Name PowerShellGet -ListAvailable
                 $latestModule = $psGetModules | Sort-Object Version -Descending | Select-Object -First 1
                 Import-Module -Name $latestModule.Name -RequiredVersion $latestModule.Version -ErrorAction Stop
+                Write-AuditLog "Updated and imported PowerShellGet version $($latestModule.Version)" -Severity Information
             }
         }
+
         # Step 2: Validate scope
         if ($Scope -eq 'AllUsers') {
             if (-not(Test-IsAdmin)) {
@@ -119,9 +147,10 @@ function Initialize-TkModuleEnv {
                 throw "Elevation required for 'AllUsers' scope."
             }
             else {
-                Write-AuditLog "Installing modules for 'AllUsers' scope."
+                Write-AuditLog "Installing modules for 'AllUsers' scope." -Severity Information
             }
         }
+
         # Step 3: Determine module set
         $prerelease = $false
         if ($PSCmdlet.ParameterSetName -eq 'Public') {
@@ -133,51 +162,91 @@ function Initialize-TkModuleEnv {
             $versions = $PrereleaseRequiredVersions
             $prerelease = $true
         }
+
         # Step 4: Install/Import each module
-        foreach ($m in $modules) {
-            $requiredVersion = $versions[$modules.IndexOf($m)]
-            $installed = Get-Module -Name $m -ListAvailable | Where-Object { [version]$_.Version -ge [version]$requiredVersion } | Sort-Object Version -Descending | Select-Object -First 1
+        for ($i = 0; $i -lt $modules.Count; $i++) {
+            $m = $modules[$i]
+            $requiredVersion = $versions[$i] # Using index instead of IndexOf for reliability
+            $installed = Get-Module -Name $m -ListAvailable |
+                Where-Object { [version]$_.Version -ge [version]$requiredVersion } |
+                Sort-Object Version -Descending |
+                Select-Object -First 1
+
             $SelectiveImports = $null
             if ($ImportModuleNames) {
                 $SelectiveImports = $ImportModuleNames | Where-Object { $_ -match $m }
             }
+
             if (-not $installed) {
                 $msgPrefix = if ($prerelease) { 'PreRelease' }else { 'stable' }
                 Write-AuditLog "The $msgPrefix module $m version $requiredVersion (or higher) is not installed." -Severity Warning
                 Write-AuditLog "Installing $m version $requiredVersion -AllowPrerelease:$prerelease."
-                Install-Module $m -Scope $Scope -RequiredVersion $requiredVersion -AllowPrerelease:$prerelease -ErrorAction Stop
-                Write-AuditLog "$m module successfully installed!"
+
+                try {
+                    Install-Module $m -Scope $Scope -RequiredVersion $requiredVersion -AllowPrerelease:$prerelease -ErrorAction Stop
+                    Write-AuditLog "$m module successfully installed!" -Severity Information
+                }
+                catch {
+                    Write-AuditLog "Failed to install $m v$requiredVersion`: $(${($_.Exception.Message)})" -Severity Error
+                    throw
+                }
+
                 if ($SelectiveImports) {
                     foreach ($ModName in $SelectiveImports) {
                         Write-AuditLog "Importing $ModName."
-                        Import-Module $ModName -ErrorAction Stop
-                        Write-AuditLog "Successfully imported $ModName."
+                        try {
+                            Import-Module $ModName -ErrorAction Stop
+                            Write-AuditLog "Successfully imported $ModName." -Severity Information
+                        }
+                        catch {
+                            Write-AuditLog "Failed to import $ModName`: $($_.Exception.Message)" -Severity Error
+                            throw
+                        }
                     }
                 }
                 else {
                     Write-AuditLog "Importing $m"
-                    Import-Module $m -ErrorAction Stop
-                    Write-AuditLog "Successfully imported $m"
+                    try {
+                        Import-Module $m -ErrorAction Stop
+                        Write-AuditLog "Successfully imported $m" -Severity Information
+                    }
+                    catch {
+                        Write-AuditLog "Failed to import $m`: $($_.Exception.Message)" -Severity Error
+                        throw
+                    }
                 }
             }
             else {
-                Write-AuditLog "$m v$($installed.Version) exists."
+                Write-AuditLog "$m v$($installed.Version) exists." -Severity Information
                 if ($SelectiveImports) {
                     foreach ($ModName in $SelectiveImports) {
                         Write-AuditLog "Importing SubModule: $ModName."
-                        Import-Module $ModName -ErrorAction Stop
-                        Write-AuditLog "Imported SubModule: $ModName."
+                        try {
+                            Import-Module $ModName -ErrorAction Stop
+                            Write-AuditLog "Imported SubModule: $ModName." -Severity Information
+                        }
+                        catch {
+                            Write-AuditLog "Failed to import submodule $ModName`: $($_.Exception.Message)" -Severity Error
+                            throw
+                        }
                     }
                 }
                 else {
                     Write-AuditLog "Importing $m"
-                    Import-Module $m -ErrorAction Stop
-                    Write-AuditLog "Imported $m"
+                    try {
+                        Import-Module $m -ErrorAction Stop
+                        Write-AuditLog "Imported $m" -Severity Information
+                    }
+                    catch {
+                        Write-AuditLog "Failed to import $m`: $($_.Exception.Message)" -Severity Error
+                        throw
+                    }
                 }
             }
         }
     }
     catch {
+        Write-AuditLog "Module initialization failed: $($_.Exception.Message)" -Severity Error
         throw
     }
     finally {
