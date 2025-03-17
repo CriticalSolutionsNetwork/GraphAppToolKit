@@ -1,4 +1,4 @@
-﻿---
+---
 external help file: GraphAppToolkit-help.xml
 Module Name: GraphAppToolkit
 online version:
@@ -15,12 +15,12 @@ Creates or retrieves a mail-enabled security group with a custom or default doma
 ### CustomDomain (Default)
 ```
 New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -PrimarySmtpAddress <String>
- [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
+ [-LogOutputPath <String>] [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### DefaultDomain
 ```
-New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -DefaultDomain <String>
+New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -DefaultDomain <String> [-LogOutputPath <String>]
  [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
@@ -56,39 +56,6 @@ and a primary SMTP address of Senders@customdomain.org.
 
 ## PARAMETERS
 
-### -Alias
-An optional alias for the group.
-If omitted, the group name is used as the alias.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -DefaultDomain
-(DefaultDomain parameter set) The domain portion to be appended to the group alias (e.g.
-"Alias@DefaultDomain").
-This parameter is mandatory when using the 'DefaultDomain' parameter set.
-
-```yaml
-Type: String
-Parameter Sets: DefaultDomain
-Aliases:
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -Name
 The name of the mail-enabled security group to create or retrieve.
 This is also used as
@@ -100,6 +67,22 @@ Parameter Sets: (All)
 Aliases:
 
 Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Alias
+An optional alias for the group.
+If omitted, the group name is used as the alias.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Position: Named
 Default value: None
 Accept pipeline input: False
@@ -123,13 +106,47 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -ProgressAction
-{{ Fill ProgressAction Description }}
+### -DefaultDomain
+(DefaultDomain parameter set) The domain portion to be appended to the group alias (e.g.
+"Alias@DefaultDomain").
+This parameter is mandatory when using the 'DefaultDomain' parameter set.
 
 ```yaml
-Type: ActionPreference
+Type: String
+Parameter Sets: DefaultDomain
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -LogOutputPath
+An optional path to output the log file.
+If not provided, logs will not be written to a file.
+
+```yaml
+Type: String
 Parameter Sets: (All)
-Aliases: proga
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WhatIf
+Shows what would happen if the cmdlet runs.
+The cmdlet is not run.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: wi
 
 Required: False
 Position: Named
@@ -153,14 +170,13 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -WhatIf
-Shows what would happen if the cmdlet runs.
-The cmdlet is not run.
+### -ProgressAction
+{{ Fill ProgressAction Description }}
 
 ```yaml
-Type: SwitchParameter
+Type: ActionPreference
 Parameter Sets: (All)
-Aliases: wi
+Aliases: proga
 
 Required: False
 Position: Named

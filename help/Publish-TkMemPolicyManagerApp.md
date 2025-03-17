@@ -1,4 +1,4 @@
-﻿---
+---
 external help file: GraphAppToolkit-help.xml
 Module Name: GraphAppToolkit
 online version:
@@ -70,21 +70,6 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -DoNotUseDomainSuffix
-If specified, the function does not append the domain suffix to the app name.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -KeyExportPolicy
 Specifies whether the newly created certificate is 'Exportable' or 'NonExportable'.
 Defaults to 'NonExportable' if not specified.
@@ -101,6 +86,22 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -VaultName
+The name of the SecretManagement vault in which to store the app credentials.
+Defaults to 'MemPolicyManagerLocalStore'.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 4
+Default value: MemPolicyManagerLocalStore
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -OverwriteVaultSecret
 If specified, overwrites any existing secret of the same name in the vault.
 
@@ -112,21 +113,6 @@ Aliases:
 Required: False
 Position: Named
 Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ProgressAction
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-
-Required: False
-Position: Named
-Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -164,18 +150,32 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -VaultName
-The name of the SecretManagement vault in which to store the app credentials.
-Defaults to 'MemPolicyManagerLocalStore'.
+### -DoNotUseDomainSuffix
+If specified, the function does not append the domain suffix to the app name.
 
 ```yaml
-Type: String
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 4
-Default value: MemPolicyManagerLocalStore
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ProgressAction
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

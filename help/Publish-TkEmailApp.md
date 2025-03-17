@@ -1,4 +1,4 @@
-﻿---
+---
 external help file: GraphAppToolkit-help.xml
 Module Name: GraphAppToolkit
 online version:
@@ -162,6 +162,38 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -MailEnabledSendingGroup
+The mail-enabled security group.
+Must be a valid email address.
+
+```yaml
+Type: String
+Parameter Sets: CreateNewApp
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ExistingAppObjectId
+The AppId of the existing App Registration to which you want to attach a certificate.
+Must be a valid GUID.
+
+```yaml
+Type: String
+Parameter Sets: UseExistingApp
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -CertPrefix
 Prefix to add to the certificate subject for the existing app.
 
@@ -205,37 +237,6 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -DoNotUseDomainSuffix
-Switch to add session domain suffix to the app name.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ExistingAppObjectId
-The AppId of the existing App Registration to which you want to attach a certificate.
-Must be a valid GUID.
-
-```yaml
-Type: String
-Parameter Sets: UseExistingApp
-Aliases:
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -KeyExportPolicy
 Key export policy for the certificate.
 Valid values are 'Exportable' and 'NonExportable'.
@@ -253,24 +254,54 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -MailEnabledSendingGroup
-The mail-enabled security group.
-Must be a valid email address.
+### -VaultName
+If specified, use a custom vault name.
+Otherwise, use the default 'GraphEmailAppLocalStore'.
 
 ```yaml
 Type: String
-Parameter Sets: CreateNewApp
+Parameter Sets: (All)
 Aliases:
 
-Required: True
+Required: False
 Position: Named
-Default value: None
+Default value: GraphEmailAppLocalStore
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
 ### -OverwriteVaultSecret
 If specified, overwrite the vault secret if it already exists.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ReturnParamSplat
+If specified, return the parameter splat for use in other functions.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -DoNotUseDomainSuffix
+Switch to add session domain suffix to the app name.
 
 ```yaml
 Type: SwitchParameter
@@ -295,37 +326,6 @@ Aliases: proga
 Required: False
 Position: Named
 Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ReturnParamSplat
-If specified, return the parameter splat for use in other functions.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -VaultName
-If specified, use a custom vault name.
-Otherwise, use the default 'GraphEmailAppLocalStore'.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: GraphEmailAppLocalStore
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

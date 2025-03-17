@@ -5,9 +5,9 @@ Creates or retrieves a mail-enabled security group with a custom or default doma
 ### Syntax
 ```powershell
 
-New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -PrimarySmtpAddress <String> [-WhatIf] [-Confirm] [<CommonParameters>]
+New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -PrimarySmtpAddress <String> [-LogOutputPath <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
 
-New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -DefaultDomain <String> [-WhatIf] [-Confirm] [<CommonParameters>]
+New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -DefaultDomain <String> [-LogOutputPath <String>] [-WhatIf] [-Confirm] [<CommonParameters>]
 
 
 
@@ -20,6 +20,7 @@ New-MailEnabledSendingGroup -Name <String> [-Alias <String>] -DefaultDomain <Str
 | <nobr>Alias</nobr> |  | An optional alias for the group. If omitted, the group name is used as the alias. | false | false |  |
 | <nobr>PrimarySmtpAddress</nobr> |  | \(CustomDomain parameter set\\) The full SMTP address for the group \(e.g. "MyGroup@contoso.com"\\). This parameter is mandatory when using the 'CustomDomain' parameter set. | true | false |  |
 | <nobr>DefaultDomain</nobr> |  | \(DefaultDomain parameter set\\) The domain portion to be appended to the group alias \(e.g. "Alias@DefaultDomain"\\). This parameter is mandatory when using the 'DefaultDomain' parameter set. | true | false |  |
+| <nobr>LogOutputPath</nobr> |  | An optional path to output the log file. If not provided, logs will not be written to a file. | false | false |  |
 | <nobr>WhatIf</nobr> | wi |  | false | false |  |
 | <nobr>Confirm</nobr> | cf |  | false | false |  |
 ### Inputs
@@ -270,16 +271,16 @@ Send-TkEmailAppMessage -AppId <String> -TenantId <String> -CertThumbprint <Strin
 ### Parameters
 | Name  | Alias  | Description | Required? | Pipeline Input | Default Value |
 | - | - | - | - | - | - |
-| <nobr>AppName</nobr> |  | \[Vault Parameter Set Only\] The name of the pre-created Microsoft Graph Email App \(stored in GraphEmailAppLocalStore\\). Used only if the 'Vault' parameter set is chosen. The function retrieves the AppId, TenantId, and certificate thumbprint from the vault entry. | true | false |  |
-| <nobr>AppId</nobr> |  | \[Manual Parameter Set Only\] The Azure AD application \(client\\) ID to use for sending the email. Must be used together with TenantId and CertThumbprint in the 'Manual' parameter set. | true | false |  |
-| <nobr>TenantId</nobr> |  | \[Manual Parameter Set Only\] The Azure AD tenant ID \(GUID or domain name\\). Must be used together with AppId and CertThumbprint in the 'Manual' parameter set. | true | false |  |
-| <nobr>CertThumbprint</nobr> |  | \[Manual Parameter Set Only\] The certificate thumbprint \(in Cert:\\CurrentUser\\My\\) used for authenticating as the Azure AD app. Must be used together with AppId and TenantId in the 'Manual' parameter set. | true | false |  |
+| <nobr>AppName</nobr> |  | \[Vault Parameter Set Only\\] The name of the pre-created Microsoft Graph Email App \(stored in GraphEmailAppLocalStore\\). Used only if the 'Vault' parameter set is chosen. The function retrieves the AppId, TenantId, and certificate thumbprint from the vault entry. | true | false |  |
+| <nobr>AppId</nobr> |  | \[Manual Parameter Set Only\\] The Azure AD application \(client\\) ID to use for sending the email. Must be used together with TenantId and CertThumbprint in the 'Manual' parameter set. | true | false |  |
+| <nobr>TenantId</nobr> |  | \[Manual Parameter Set Only\\] The Azure AD tenant ID \(GUID or domain name\\). Must be used together with AppId and CertThumbprint in the 'Manual' parameter set. | true | false |  |
+| <nobr>CertThumbprint</nobr> |  | \[Manual Parameter Set Only\\] The certificate thumbprint \(in Cert:\\CurrentUser\\My\\) used for authenticating as the Azure AD app. Must be used together with AppId and TenantId in the 'Manual' parameter set. | true | false |  |
 | <nobr>To</nobr> |  | The email address of the recipient. | true | false |  |
 | <nobr>FromAddress</nobr> |  | The email address of the sender who is authorized to send email as configured in the Graph Email App. | true | false |  |
 | <nobr>Subject</nobr> |  | The subject line of the email. | true | false |  |
 | <nobr>EmailBody</nobr> |  | The body text of the email. | true | false |  |
 | <nobr>AttachmentPath</nobr> |  | An array of file paths for any attachments to include in the email. Each path must exist as a leaf file. | false | false |  |
-| <nobr>VaultName</nobr> |  | \[Vault Parameter Set Only\] The name of the vault to retrieve the GraphEmailApp object. Default is 'GraphEmailAppLocalStore'. | false | false | GraphEmailAppLocalStore |
+| <nobr>VaultName</nobr> |  | \[Vault Parameter Set Only\\] The name of the vault to retrieve the GraphEmailApp object. Default is 'GraphEmailAppLocalStore'. | false | false | GraphEmailAppLocalStore |
 | <nobr>WhatIf</nobr> | wi |  | false | false |  |
 | <nobr>Confirm</nobr> | cf |  | false | false |  |
 ### Note

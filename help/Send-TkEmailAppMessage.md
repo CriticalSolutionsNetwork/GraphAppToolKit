@@ -1,4 +1,4 @@
-﻿---
+---
 external help file: GraphAppToolkit-help.xml
 Module Name: GraphAppToolkit
 online version:
@@ -63,24 +63,6 @@ Uses the provided AppId, TenantId, and CertThumbprint directly (no vault) to obt
 
 ## PARAMETERS
 
-### -AppId
-\[Manual Parameter Set Only\]
-The Azure AD application (client) ID to use for sending the email.
-Must be used together with TenantId
-and CertThumbprint in the 'Manual' parameter set.
-
-```yaml
-Type: String
-Parameter Sets: Manual
-Aliases:
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -AppName
 \[Vault Parameter Set Only\]
 The name of the pre-created Microsoft Graph Email App (stored in GraphEmailAppLocalStore).
@@ -101,90 +83,15 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -AttachmentPath
-An array of file paths for any attachments to include in the email.
-Each path must exist as a leaf file.
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -CertThumbprint
+### -AppId
 \[Manual Parameter Set Only\]
-The certificate thumbprint (in Cert:\CurrentUser\My) used for authenticating as the Azure AD app.
-Must be used together with AppId and TenantId in the 'Manual' parameter set.
+The Azure AD application (client) ID to use for sending the email.
+Must be used together with TenantId
+and CertThumbprint in the 'Manual' parameter set.
 
 ```yaml
 Type: String
 Parameter Sets: Manual
-Aliases:
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -EmailBody
-The body text of the email.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -FromAddress
-The email address of the sender who is authorized to send email as configured in the Graph Email App.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: True
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ProgressAction
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Subject
-The subject line of the email.
-
-```yaml
-Type: String
-Parameter Sets: (All)
 Aliases:
 
 Required: True
@@ -199,6 +106,23 @@ Accept wildcard characters: False
 The Azure AD tenant ID (GUID or domain name).
 Must be used together with AppId and CertThumbprint
 in the 'Manual' parameter set.
+
+```yaml
+Type: String
+Parameter Sets: Manual
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -CertThumbprint
+\[Manual Parameter Set Only\]
+The certificate thumbprint (in Cert:\CurrentUser\My) used for authenticating as the Azure AD app.
+Must be used together with AppId and TenantId in the 'Manual' parameter set.
 
 ```yaml
 Type: String
@@ -227,6 +151,67 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -FromAddress
+The email address of the sender who is authorized to send email as configured in the Graph Email App.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Subject
+The subject line of the email.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -EmailBody
+The body text of the email.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AttachmentPath
+An array of file paths for any attachments to include in the email.
+Each path must exist as a leaf file.
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -VaultName
 \[Vault Parameter Set Only\]
 The name of the vault to retrieve the GraphEmailApp object.
@@ -240,6 +225,22 @@ Aliases:
 Required: False
 Position: Named
 Default value: GraphEmailAppLocalStore
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WhatIf
+Shows what would happen if the cmdlet runs.
+The cmdlet is not run.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: wi
+
+Required: False
+Position: Named
+Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -259,14 +260,13 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -WhatIf
-Shows what would happen if the cmdlet runs.
-The cmdlet is not run.
+### -ProgressAction
+{{ Fill ProgressAction Description }}
 
 ```yaml
-Type: SwitchParameter
+Type: ActionPreference
 Parameter Sets: (All)
-Aliases: wi
+Aliases: proga
 
 Required: False
 Position: Named
