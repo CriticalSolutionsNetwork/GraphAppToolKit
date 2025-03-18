@@ -1,19 +1,22 @@
 <#
 .SYNOPSIS
-    Retrieves an existing certificate from the current user's certificate store based on the provided certificate name.
+Retrieves an existing certificate from the current user's certificate store based on the subject name.
+
 .DESCRIPTION
-    The Get-TkExistingCert function searches for a certificate in the current user's "My" certificate store with a subject that matches the provided certificate name.
-    If the certificate is found, it logs audit messages and provides instructions for removing the certificate if needed.
-    If the certificate is not found, it logs an audit message indicating that the certificate does not exist.
+The Get-TkExistingCert function searches for a certificate in the current user's certificate store with the specified subject name.
+If the certificate exists, it provides instructions on how to remove the certificate and optionally removes it if confirmed by the user.
+
 .PARAMETER CertName
-    The subject name of the certificate to search for in the current user's certificate store.
+The subject name of the certificate to search for in the current user's certificate store.
+
 .EXAMPLE
-    PS C:\> Get-TkExistingCert -CertName "CN=example.com"
-    This command searches for a certificate with the subject "CN=example.com" in the current user's certificate store.
+PS C:\> Get-TkExistingCert -CertName "CN=example.com"
+Searches for a certificate with the subject name "CN=example.com" in the current user's certificate store.
+If found, it provides instructions on how to remove the certificate and optionally removes it if confirmed by the user.
+
 .NOTES
-    Author: DrIOSx
-    Date: 2025-03-12
-    Version: 1.0
+This function uses the certificate store path 'Cert:\CurrentUser\My' to search for the certificate.
+The function logs its operations using the Write-AuditLog cmdlet.
 #>
 function Get-TkExistingCert {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
