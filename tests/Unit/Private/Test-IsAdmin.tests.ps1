@@ -10,35 +10,26 @@ Import-Module $ProjectName
 InModuleScope $ProjectName {
     Describe "Test-IsAdmin" {
         Context "When the user is an administrator" {
-            It "Should return True" {
-                # Mock the WindowsPrincipal and WindowsIdentity classes
-                Mock -CommandName 'Security.Principal.WindowsPrincipal' -MockWith {
-                    return @{
-                        IsInRole = { param($role) return $role -eq [Security.Principal.WindowsBuiltinRole]::Administrator }
-                    }
+            It "Returns True" {
+                Mock -CommandName New-Object -MockWith {
+                    $mockPrincipal = [PSCustomObject]@{}
+                    Add-Member -InputObject $mockPrincipal -MemberType ScriptMethod -Name IsInRole -Value { return $true }
+                    return $mockPrincipal
                 }
-                Mock -CommandName 'Security.Principal.WindowsIdentity::GetCurrent' -MockWith {
-                    return $null
-                }
-                # Call the function and assert the result
-                $result = Test-IsAdmin
-                $result | Should -Be $true
+
+                Test-IsAdmin | Should -Be $true
             }
         }
+
         Context "When the user is not an administrator" {
-            It "Should return False" {
-                # Mock the WindowsPrincipal and WindowsIdentity classes
-                Mock -CommandName 'Security.Principal.WindowsPrincipal' -MockWith {
-                    return @{
-                        IsInRole = { param($role) return $false }
-                    }
+            It "Returns False" {
+                Mock -CommandName New-Object -MockWith {
+                    $mockPrincipal = [PSCustomObject]@{}
+                    Add-Member -InputObject $mockPrincipal -MemberType ScriptMethod -Name IsInRole -Value { return $false }
+                    return $mockPrincipal
                 }
-                Mock -CommandName 'Security.Principal.WindowsIdentity::GetCurrent' -MockWith {
-                    return $null
-                }
-                # Call the function and assert the result
-                $result = Test-IsAdmin
-                $result | Should -Be $false
+
+                Test-IsAdmin | Should -Be $false
             }
         }
     }

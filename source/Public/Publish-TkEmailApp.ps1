@@ -6,7 +6,7 @@
         1. Creating a new app with specified parameters.
         2. Using an existing app and attaching a certificate to it.
     .PARAMETER AppPrefix
-        The prefix used to initialize the Graph Email App. Must be 2-4 characters, letters, and numbers only. Default is 'Gtk'.
+        The prefix used to initialize the Graph Email App. Must be 2-4 characters, letters, and numbers only. The default value is 'Gtk'.
     .PARAMETER AuthorizedSenderUserName
         The username of the authorized sender. Must be a valid email address.
     .PARAMETER MailEnabledSendingGroup
@@ -18,7 +18,7 @@
     .PARAMETER CertThumbprint
         The thumbprint of the certificate to be retrieved. Must be a valid 40-character hexadecimal string.
     .PARAMETER KeyExportPolicy
-        Key export policy for the certificate. Valid values are 'Exportable' and 'NonExportable'. Default is 'NonExportable'.
+        Key export policy for the certificate. Valid values are 'Exportable' and 'NonExportable'. The default value is 'NonExportable'.
     .PARAMETER VaultName
         If specified, use a custom vault name. Otherwise, use the default 'GraphEmailAppLocalStore'.
     .PARAMETER OverwriteVaultSecret
@@ -521,7 +521,6 @@ function Publish-TkEmailApp {
                 }
             } # end switch
         }
-
     }
     end {
         if ($ReturnParamSplat -and $graphEmailApp) {
