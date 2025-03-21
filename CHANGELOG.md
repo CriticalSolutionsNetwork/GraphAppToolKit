@@ -5,13 +5,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- Added Get-TkMsalToken cmdlet to retrieve an MSAL token using API calls.
-- Added Managed Identity support for  Get-TkMsalToken cmdlet (Needs to be tested).
-- SecureString support for Get-TkMsalToken cmdlet.
-- Formatting alignment for cmdlets.
-
 ### Fixed
 
 - Fixed authentication context for MgGraph.
@@ -21,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated private function names to be more descriptive.
 - Removed MSAL.PS dependency from Send-TkEmailAppMessage function.
 - Removed Send-TkEmailAppMessage module install if manual parameters are provided.
+
+## [0.2.1] - 2025-03-17
+
+### Added
+
+- Added Get-TkMsalToken cmdlet to retrieve an MSAL token using API calls.
+- Added Managed Identity support for  Get-TkMsalToken cmdlet (Needs to be tested).
+- SecureString support for Get-TkMsalToken cmdlet.
+- Formatting alignment for cmdlets.
 
 ## [0.2.0] - 2025-03-14
 
