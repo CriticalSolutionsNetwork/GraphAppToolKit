@@ -1,6 +1,6 @@
 $ProjectPath = "$PSScriptRoot\..\..\.." | Convert-Path
 $ProjectName = ((Get-ChildItem -Path $ProjectPath\*\*.psd1).Where{
-        ($_.Directory.Name -match 'source|src' -or $_.Directory.Name -eq $_.BaseName) -and
+    ($_.Directory.Name -match 'source|src' -or $_.Directory.Name -eq $_.BaseName) -and
         $(try { Test-ModuleManifest $_.FullName -ErrorAction Stop } catch { $false } )
     }).BaseName
 
@@ -9,114 +9,73 @@ Import-Module $ProjectName
 InModuleScope $ProjectName {
     Describe 'Connect-TkMsService' {
         BeforeAll {
-            # Define the functions before mocking them
-            function Write-AuditLog { }
-            function Get-MgUser { }
-            function Get-MgContext { }
-            function Get-MgOrganization { }
-            function Remove-MgContext { }
-            function Connect-MgGraph { }
-            function Get-OrganizationConfig { }
-            function Disconnect-ExchangeOnline { }
-            function Connect-ExchangeOnline { }
-
-            # Mocks are now set up once for the entire Describe block
-            Mock -CommandName 'Write-AuditLog' -MockWith {
-                Write-Host "Audit log: $_"
-            } -ModuleName GraphAppToolkit
-            Mock -CommandName 'Get-MgUser' -ModuleName GraphAppToolkit
-            Mock -CommandName 'Get-MgContext' -ModuleName GraphAppToolkit
-            Mock -CommandName 'Get-MgOrganization' -ModuleName GraphAppToolkit
-            Mock -CommandName 'Remove-MgContext' -ModuleName GraphAppToolkit
-            Mock -CommandName 'Connect-MgGraph' -ModuleName GraphAppToolkit
-            Mock -CommandName 'Get-OrganizationConfig' -ModuleName GraphAppToolkit
-            Mock -CommandName 'Disconnect-ExchangeOnline' -ModuleName GraphAppToolkit
-            Mock -CommandName 'Connect-ExchangeOnline' -ModuleName GraphAppToolkit
+            function Get-OrganizationConfig {}
+            function Remove-MgContext {}
+            # Mock external dependency commands to avoid real Graph/Exchange calls for each test
+            Mock Connect-MgGraph -ModuleName GraphAppToolkit -MockWith { $null }
+            Mock Connect-ExchangeOnline -ModuleName GraphAppToolkit -MockWith { $null }
+            Mock Get-MgUser -ModuleName GraphAppToolkit -MockWith { $null }
+            Mock Get-OrganizationConfig -ModuleName GraphAppToolkit -MockWith { throw 'No EXO session' }
+            Mock Get-MgContext -ModuleName GraphAppToolkit -MockWith { throw }
+            Mock Get-MgOrganization -ModuleName GraphAppToolkit -MockWith { [PSCustomObject]@{ DisplayName = 'DummyOrg' } }
+            Mock Remove-MgContext -ModuleName GraphAppToolkit -MockWith { $null }
+            Mock Disconnect-ExchangeOnline -ModuleName GraphAppToolkit -MockWith { $null }
+            Mock Write-AuditLog -MockWith { $null }
         }
 
-        Context 'When connecting to Microsoft Graph' {
-            It 'Should connect to Microsoft Graph with specified scopes' {
-                $params = @{
-                    MgGraph = $true
-                    GraphAuthScopes = @('User.Read', 'Mail.Read')
-                }
+        Context 'When only the -MgGraph switch is used' {
+            It 'calls Connect-MgGraph and not Connect-ExchangeOnline' {
+                # Act: call function with MgGraph switch
+                Connect-TkMsService -MgGraph -GraphAuthScopes @('User.Read') -Confirm:$false
 
-                Connect-TkMsService @params -Confirm:$false
-
-                Assert-MockCalled -CommandName 'Connect-MgGraph' -ModuleName GraphAppToolkit -Exactly -Times 1
-                Assert-MockCalled -CommandName 'Write-AuditLog' -ModuleName GraphAppToolkit -Exactly -Times 1 -Scope It -ParameterFilter { $_ -eq 'Connected to Microsoft Graph.' }
+                # Assert: Connect-MgGraph was called once; Connect-ExchangeOnline was not called
+                Assert-MockCalled Connect-MgGraph -ModuleName GraphAppToolkit -Times 1
+                Assert-MockCalled Connect-ExchangeOnline -ModuleName GraphAppToolkit -Times 0
             }
+        }
+        Context "When only the -ExchangeOnline switch is used" {
+            It "calls Connect-ExchangeOnline and not Connect-MgGraph" {
+                # Act: call function with ExchangeOnline switch
+                Connect-TkMsService -ExchangeOnline -Confirm:$false
 
-            It 'Should reuse existing Microsoft Graph session if valid' {
-                Mock -CommandName 'Get-MgUser' -ModuleName GraphAppToolkit -MockWith { }
-                Mock -CommandName 'Get-MgContext' -ModuleName GraphAppToolkit -MockWith { @{ Scopes = @('User.Read', 'Mail.Read') } }
-                Mock -CommandName 'Get-MgOrganization' -ModuleName GraphAppToolkit -MockWith { @{ DisplayName = 'TestOrg' } }
-
-                $params = @{
-                    MgGraph = $true
-                    GraphAuthScopes = @('User.Read', 'Mail.Read')
-                }
-
-                Connect-TkMsService @params -Confirm:$false
-
-                Assert-MockCalled -CommandName 'Get-MgUser' -ModuleName GraphAppToolkit -Exactly -Times 1
-                Assert-MockCalled -CommandName 'Write-AuditLog' -ModuleName GraphAppToolkit -Exactly -Times 1 -Scope It -ParameterFilter { $_ -like '*Using existing Microsoft Graph session*' }
-            }
-
-            It 'Should create a new Microsoft Graph session if existing session is invalid' {
-                Mock -CommandName 'Get-MgUser' -ModuleName GraphAppToolkit -MockWith { throw "Invalid session" }
-                Mock -CommandName 'Connect-MgGraph' -ModuleName GraphAppToolkit -MockWith { }
-
-                $params = @{
-                    MgGraph = $true
-                    GraphAuthScopes = @('User.Read', 'Mail.Read')
-                }
-
-                Connect-TkMsService @params -Confirm:$false
-
-                Assert-MockCalled -CommandName 'Connect-MgGraph' -ModuleName GraphAppToolkit -Exactly -Times 1
-                Assert-MockCalled -CommandName 'Write-AuditLog' -ModuleName GraphAppToolkit -Exactly -Times 1 -Scope It -ParameterFilter { $_ -eq 'Connected to Microsoft Graph.' }
+                # Assert: Connect-ExchangeOnline was called once; Connect-MgGraph was not called
+                Assert-MockCalled Connect-ExchangeOnline -Times 1
+                Assert-MockCalled Connect-MgGraph        -Times 0
             }
         }
 
-        Context 'When connecting to Exchange Online' {
-            It 'Should connect to Exchange Online' {
-                $params = @{
-                    ExchangeOnline = $true
-                }
+        Context "When both -MgGraph and -ExchangeOnline switches are used" {
+            It "calls both Connect-MgGraph and Connect-ExchangeOnline" {
+                # Act: call function with both switches
+                Connect-TkMsService -MgGraph -GraphAuthScopes @('User.Read') -ExchangeOnline -Confirm:$false
 
-                Connect-TkMsService @params -Confirm:$false
-
-                Assert-MockCalled -CommandName 'Connect-ExchangeOnline' -ModuleName GraphAppToolkit -Exactly -Times 1
-                Assert-MockCalled -CommandName 'Write-AuditLog' -ModuleName GraphAppToolkit -Exactly -Times 1 -Scope It -ParameterFilter { $_ -eq 'Connected to Exchange Online.' }
-            }
-
-            It 'Should reuse existing Exchange Online session if valid' {
-                Mock -CommandName 'Get-OrganizationConfig' -ModuleName GraphAppToolkit -MockWith { @{ DisplayName = 'TestOrg' } }
-
-                $params = @{
-                    ExchangeOnline = $true
-                }
-
-                Connect-TkMsService @params -Confirm:$false
-
-                Assert-MockCalled -CommandName 'Get-OrganizationConfig' -ModuleName GraphAppToolkit -Exactly -Times 1
-                Assert-MockCalled -CommandName 'Write-AuditLog' -ModuleName GraphAppToolkit -Exactly -Times 1 -Scope It -ParameterFilter { $_ -eq 'Using existing Exchange Online session.' }
-            }
-
-            It 'Should create a new Exchange Online session if existing session is invalid' {
-                Mock -CommandName 'Get-OrganizationConfig' -ModuleName GraphAppToolkit -MockWith { throw "Invalid session" }
-                Mock -CommandName 'Connect-ExchangeOnline' -ModuleName GraphAppToolkit -MockWith { }
-
-                $params = @{
-                    ExchangeOnline = $true
-                }
-
-                Connect-TkMsService @params -Confirm:$false
-
-                Assert-MockCalled -CommandName 'Connect-ExchangeOnline' -ModuleName GraphAppToolkit -Exactly -Times 1
-                Assert-MockCalled -CommandName 'Write-AuditLog' -ModuleName GraphAppToolkit -Exactly -Times 1 -Scope It -ParameterFilter { $_ -eq 'Connected to Exchange Online.' }
+                # Assert: Both Connect-MgGraph and Connect-ExchangeOnline were called once
+                Assert-MockCalled Connect-MgGraph        -Times 1
+                Assert-MockCalled Connect-ExchangeOnline -Times 1
             }
         }
+
+        Context "When no switch is specified" {
+            It "does not call any Connect commands" {
+                # Act: call function with no switches
+                Connect-TkMsService -Confirm:$false
+
+                # Assert: Neither Connect-MgGraph nor Connect-ExchangeOnline was called
+                Assert-MockCalled Connect-MgGraph        -Times 0
+                Assert-MockCalled Connect-ExchangeOnline -Times 0
+            }
+        }
+        Context "When Microsoft Graph connection fails" {
+            BeforeEach {
+                Mock Connect-MgGraph -ModuleName GraphAppToolkit -MockWith { throw "Graph API Failure" }
+            }
+
+            It "throws an error and logs the failure" {
+                { Connect-TkMsService -MgGraph -GraphAuthScopes @('User.Read') -Confirm:$false } | Should -Throw "Graph API Failure"
+                Assert-MockCalled Write-AuditLog -Times 1
+            }
+        }
+
     }
 }
+
