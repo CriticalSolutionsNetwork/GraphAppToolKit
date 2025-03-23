@@ -110,7 +110,7 @@ function Get-TkMsalToken {
         }
     }
     process {
-        if ($PSCmdlet.ParameterSetName -eq 'ManagedIdentity') {
+        if ($PSCmdlet.ParameterSetName -eq 'ManagedIdentity' -and $UseManagedIdentity) {
             # Managed Identity Authentication (Only Works in Azure-hosted Environments)
             try {
                 $uri = 'http://169.254.169.254/metadata/identity/oauth2/token?resource=https://graph.microsoft.com&api-version=2019-08-01'
