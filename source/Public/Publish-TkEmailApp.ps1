@@ -117,124 +117,122 @@
         This cmdlet requires that the user running the cmdlet have the necessary permissions to create the app and connect to Exchange Online.
 #>
 function Publish-TkEmailApp {
-    [CmdletBinding(SupportsShouldProcess = $true , ConfirmImpact = 'High', DefaultParameterSetName = 'CreateNewApp')]
-    param(
-        # REGION: CREATE NEW APP param set
-        [Parameter(
-            Mandatory = $false,
-            ParameterSetName = 'CreateNewApp',
-            HelpMessage = `
-                'The prefix used to initialize the Graph Email App. 2-4 characters letters and numbers only.'
-        )]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName = 'Interactive')]
+    param (
+        # REGION: INTERACTIVE (default) — no parameters needed
+
+        # REGION: CREATE NEW APP
+        [Parameter(Mandatory = $false, ParameterSetName = 'CreateNewApp')]
         [ValidatePattern('^[A-Z0-9]{2,4}$')]
         [string]
         $AppPrefix = 'Gtk',
-        [Parameter(
-            Mandatory = $true,
-            ParameterSetName = 'CreateNewApp',
-            HelpMessage = `
-                'The username of the authorized sender.'
-        )]
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'CreateNewApp')]
         [ValidatePattern('^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')]
         [string]
         $AuthorizedSenderUserName,
-        [Parameter(
-            Mandatory = $true,
-            ParameterSetName = 'CreateNewApp',
-            HelpMessage = `
-                'The Mail Enabled Sending Group.'
-        )]
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'CreateNewApp')]
         [ValidatePattern('^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')]
         [string]
         $MailEnabledSendingGroup,
-        # REGION: USE EXISTING APP param set
-        [Parameter(
-            Mandatory = $true,
-            ParameterSetName = 'UseExistingApp',
-            HelpMessage = `
-                'The AppId of the existing App Registration to which you want to attach a certificate.'
-        )]
+
+        # REGION: USE EXISTING APP
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseExistingApp')]
         [ValidatePattern('^[0-9a-fA-F-]{36}$')]
         [string]
         $ExistingAppObjectId,
-        [Parameter(
-            Mandatory = $true,
-            ParameterSetName = 'UseExistingApp',
-            HelpMessage = `
-                'Prefix to add to certificate subject for existing app.'
-        )]
-        [Parameter(
-            Mandatory = $false,
-            ParameterSetName = 'CreateNewApp',
-            HelpMessage = `
-                'Prefix to add to certificate subject for existing app.'
-        )]
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseExistingApp')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'CreateNewApp')]
         [string]
         $CertPrefix,
-        # REGION: Shared parameters
-        [Parameter(
-            Mandatory = $false,
-            HelpMessage = `
-                'The thumbprint of the certificate to be retrieved.'
-        )]
+
+        # REGION: Shared parameters (must declare all sets explicitly)
+        [Parameter(Mandatory = $false, ParameterSetName = 'CreateNewApp')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseExistingApp')]
         [ValidatePattern('^[A-Fa-f0-9]{40}$')]
         [string]
         $CertThumbprint,
-        [Parameter(
-            Mandatory = $false,
-            HelpMessage = `
-                'Key export policy for the certificate.'
-        )]
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CreateNewApp')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseExistingApp')]
         [ValidateSet('Exportable', 'NonExportable')]
         [string]
         $KeyExportPolicy = 'NonExportable',
-        [Parameter(
-            Mandatory = $false,
-            HelpMessage = `
-                'If specified, use a custom vault name. Otherwise, use the default.'
-        )]
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CreateNewApp')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseExistingApp')]
         [string]
         $VaultName = 'GraphEmailAppLocalStore',
-        [Parameter(
-            Mandatory = $false,
-            HelpMessage = `
-                'If specified, overwrite the vault secret if it already exists.'
-        )]
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CreateNewApp')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseExistingApp')]
         [switch]
         $OverwriteVaultSecret,
-        [Parameter(
-            Mandatory = $false,
-            HelpMessage = `
-                'Return the parameter splat for use in other functions.'
-        )]
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CreateNewApp')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseExistingApp')]
         [switch]
         $ReturnParamSplat,
-        [Parameter(
-            Mandatory = $false,
-            HelpMessage = `
-                'Switch to add session domain suffix to the app name.'
-        )]
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CreateNewApp')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseExistingApp')]
         [switch]
         $DoNotUseDomainSuffix,
-        [Parameter(
-            Mandatory = $false,
-            HelpMessage = `
-                'If specified, log the output to the console to the specified log file.'
-        )]
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'CreateNewApp')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'UseExistingApp')]
         [string]
         $LogOutput
     )
     begin {
-        <#
-            This cmdlet requires that the user running the cmdlet have the necessary permissions to
-            create the app and connect to Exchange Online. In addition, a mail-enabled security group
-            must already exist in Exchange Online for the MailEnabledSendingGroup parameter.
-            Permissions required:
-                'Application.ReadWrite.All',
-                'DelegatedPermissionGrant.ReadWrite.All',
-                'Directory.ReadWrite.All',
-                'RoleManagement.ReadWrite.Directory'
-        #>
+        if ($PSCmdlet.ParameterSetName -eq 'Interactive') {
+            Write-Verbose "Welcome to the GraphAppToolkit Email App Publisher!" -Verbose
+            Write-Verbose "Please select an option:" -Verbose
+            Write-Verbose "   1) Create a new app registration." -Verbose
+            Write-Verbose "   2) Use an existing app registration." -Verbose
+            $choice = Read-Host "Enter 1 or 2"
+            switch ($choice) {
+                '1' {
+                    $AuthorizedSenderUserName = Read-Host "Enter the authorized sender's email (e.g., user@example.com)"
+                    $hasGroup = Read-Host "Have you already created a mail-enabled security group? (y/n)"
+                    if ($hasGroup -ne 'y') {
+                        $createGroup = Read-Host "Would you like to create one now? (y/n)"
+                        if ($createGroup -eq 'y') {
+                            $groupName = Read-Host "Enter a name for the Mail Enabled Sending Group (e.g., CTSO-GraphAPIMail)"
+                            $defaultDomain = Read-Host "Enter your default email domain (e.g., contoso.com) that will be appended to the group name. (e.g., CTSO-GraphAPIMail@contoso.com)"
+                            Write-Verbose "Creating Mail Enabled Sending Group '$groupName' in domain '$defaultDomain'..." -Verbose
+                            $group = New-MailEnabledSendingGroup -Name $groupName -DefaultDomain $defaultDomain -Verbose -InformationAction Continue
+                            $MailEnabledSendingGroup = $group.PrimarySmtpAddress
+                            if (-not $MailEnabledSendingGroup) {
+                                throw "Could not determine the group's PrimarySmtpAddress. Ensure the group was created successfully."
+                            }
+                        }
+                        else {
+                            Write-Verbose "You must provide a mail-enabled security group to proceed. Please run the command again after creating one." -Verbose
+                            return
+                        }
+                    }
+                    else {
+                        $MailEnabledSendingGroup = Read-Host "Enter the mail-enabled sending group (e.g., group@example.com)"
+                    }
+                    $AppPrefixInput = Read-Host "Enter the app prefix (default is 'Gtk')"
+                    if ([string]::IsNullOrEmpty($AppPrefixInput)) { $AppPrefixInput = 'Gtk' }
+                    return Publish-TkEmailApp -AuthorizedSenderUserName $AuthorizedSenderUserName `
+                        -MailEnabledSendingGroup $MailEnabledSendingGroup -AppPrefix $AppPrefixInput
+                }
+                '2' {
+                    $ExistingAppObjectId = Read-Host "Enter the existing App's ObjectId (GUID)"
+                    $CertPrefixInput = Read-Host "Enter the certificate prefix"
+                    return Publish-TkEmailApp -ExistingAppObjectId $ExistingAppObjectId -CertPrefix $CertPrefixInput
+                }
+                default {
+                    Write-Verbose "Invalid selection. Please run the command again." -Verbose
+                    return
+                }
+            }
+        }
         if (-not $script:LogString) {
             Write-AuditLog -Start
         }
@@ -243,7 +241,6 @@ function Publish-TkEmailApp {
         }
         try {
             Write-AuditLog '###############################################'
-            # 1) Ensure required modules are installed
             $PublicMods = 'Microsoft.Graph', 'ExchangeOnlineManagement', 'Microsoft.PowerShell.SecretManagement', 'SecretManagement.JustinGrote.CredMan'
             $PublicVers = '1.22.0', '3.1.0', '1.1.2', '1.0.0'
             $ImportMods = 'Microsoft.Graph.Authentication', 'Microsoft.Graph.Applications', 'Microsoft.Graph.Identity.SignIns', 'Microsoft.Graph.Users'

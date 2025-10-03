@@ -29,7 +29,7 @@
 #>
 function New-TkAppRegistration {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
-    [OutputType([Microsoft.Graph.PowerShell.Models.MicrosoftGraphApplication1])]
+    [OutputType([pscustomobject])]
     param (
         [Parameter(
             Mandatory = $true,
