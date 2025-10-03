@@ -183,7 +183,7 @@ function Initialize-TkModuleEnv {
                 Write-AuditLog "Installing $m version $requiredVersion -AllowPrerelease:$prerelease."
 
                 try {
-                    Install-Module $m -Scope $Scope -RequiredVersion $requiredVersion -AllowPrerelease:$prerelease -ErrorAction Stop
+                    Install-Module $m -Scope $Scope -MinimumVersion $requiredVersion -AllowPrerelease:$prerelease -ErrorAction Stop
                     Write-AuditLog "$m module successfully installed!" -Severity Information
                 }
                 catch {
