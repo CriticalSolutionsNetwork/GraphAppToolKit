@@ -125,6 +125,17 @@ function Publish-TkM365AuditApp {
             Write-AuditLog -BeginFunction
         }
         Write-AuditLog '###############################################'
+        Write-AuditLog '###############################################'
+        $PublicMods = 'Microsoft.Graph', 'ExchangeOnlineManagement', 'Microsoft.PowerShell.SecretManagement', 'SecretManagement.JustinGrote.CredMan'
+        $PublicVers = '1.22.0', '3.1.0', '1.1.2', '1.0.0'
+        $ImportMods = 'Microsoft.Graph.Authentication', 'Microsoft.Graph.Applications', 'Microsoft.Graph.Identity.SignIns', 'Microsoft.Graph.Users'
+        $ModParams = @{
+            PublicModuleNames      = $PublicMods
+            PublicRequiredVersions = $PublicVers
+            ImportModuleNames      = $ImportMods
+            Scope                  = 'CurrentUser'
+        }
+        Initialize-TkModuleEnv @ModParams
         Write-AuditLog 'Initializing M365 Audit App publication process...'
         $scopesNeeded = @(
             'Application.ReadWrite.All',
