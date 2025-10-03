@@ -203,7 +203,7 @@ function Send-TkEmailAppMessage {
                 '1.1.2', '1.0.0', '4.37.0.0'
             $params1 = @{
                 PublicModuleNames      = $PublicMods
-                PublicRequiredVersions = $PublicVers
+                PublicMinimumVersions = $PublicVers
                 Scope                  = 'CurrentUser'
             }
             Initialize-TkModuleEnv @params1

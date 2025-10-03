@@ -246,7 +246,7 @@ function Publish-TkEmailApp {
             $ImportMods = 'Microsoft.Graph.Authentication', 'Microsoft.Graph.Applications', 'Microsoft.Graph.Identity.SignIns', 'Microsoft.Graph.Users'
             $ModParams = @{
                 PublicModuleNames      = $PublicMods
-                PublicRequiredVersions = $PublicVers
+                PublicMinimumVersions = $PublicVers
                 ImportModuleNames      = $ImportMods
                 Scope                  = 'CurrentUser'
             }
