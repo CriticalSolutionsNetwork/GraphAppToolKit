@@ -12,7 +12,12 @@ Publishes a new or existing Graph Email App with specified configurations.
 
 ## SYNTAX
 
-### CreateNewApp (Default)
+### Interactive (Default)
+```
+Publish-TkEmailApp [-ProgressAction <ActionPreference>] [-WhatIf] [-Confirm] [<CommonParameters>]
+```
+
+### CreateNewApp
 ```
 Publish-TkEmailApp [-AppPrefix <String>] -AuthorizedSenderUserName <String> -MailEnabledSendingGroup <String>
  [-CertPrefix <String>] [-CertThumbprint <String>] [-KeyExportPolicy <String>] [-VaultName <String>]
@@ -228,7 +233,7 @@ Must be a valid 40-character hexadecimal string.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: CreateNewApp, UseExistingApp
 Aliases:
 
 Required: False
@@ -245,7 +250,7 @@ Default is 'NonExportable'.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: CreateNewApp, UseExistingApp
 Aliases:
 
 Required: False
@@ -261,7 +266,7 @@ Otherwise, use the default 'GraphEmailAppLocalStore'.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: CreateNewApp, UseExistingApp
 Aliases:
 
 Required: False
@@ -276,7 +281,7 @@ If specified, overwrite the vault secret if it already exists.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
+Parameter Sets: CreateNewApp, UseExistingApp
 Aliases:
 
 Required: False
@@ -291,7 +296,7 @@ If specified, return the parameter splat for use in other functions.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
+Parameter Sets: CreateNewApp, UseExistingApp
 Aliases:
 
 Required: False
@@ -306,7 +311,7 @@ Switch to add session domain suffix to the app name.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
+Parameter Sets: CreateNewApp, UseExistingApp
 Aliases:
 
 Required: False
@@ -321,7 +326,7 @@ If specified, log the output to the console.
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: CreateNewApp, UseExistingApp
 Aliases:
 
 Required: False

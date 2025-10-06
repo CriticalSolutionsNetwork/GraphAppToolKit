@@ -7,14 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed authentication context for MgGraph.
-- Failing private test made generic.
+- Fixed module installation logic to correctly register the module after build and import.  
+- Fixed parameter handling in module manifest and public functions for better consistency.  
+- Fixed minimum PowerShell version declaration and validation during install.  
+- Minor internal refactor related to domain-suffix optional parameter handling.  
 
 ### Changed
 
-- Updated private function names to be more descriptive.
-- Removed MSAL.PS dependency from Send-TkEmailAppMessage function.
-- Removed Send-TkEmailAppMessage module install if manual parameters are provided.
+- Made the domain suffix optional during app name initialization for greater flexibility in tenant naming conventions.
 
 ## [0.2.1] - 2025-03-17
 
@@ -24,6 +24,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Managed Identity support for  Get-TkMsalToken cmdlet (Needs to be tested).
 - SecureString support for Get-TkMsalToken cmdlet.
 - Formatting alignment for cmdlets.
+
+### Fixed
+
+- Fixed authentication context for MgGraph.
+
+### Changed
+
+- Updated private function names to be more descriptive.
+- Removed MSAL.PS dependency from Send-TkEmailAppMessage function.
+- Removed Send-TkEmailAppMessage module install if manual parameters are provided.
 
 ## [0.2.0] - 2025-03-14
 
