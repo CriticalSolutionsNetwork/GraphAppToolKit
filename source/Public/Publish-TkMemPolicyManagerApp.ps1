@@ -131,16 +131,21 @@ function Publish-TkMemPolicyManagerApp {
         }
         try {
             Write-AuditLog '###############################################'
-            $PublicMods = 'Microsoft.Graph', 'Microsoft.PowerShell.SecretManagement', 'SecretManagement.JustinGrote.CredMan'
-            $PublicVers = '1.22.0', '1.1.2', '1.0.0'
-            $ImportMods = 'Microsoft.Graph.Authentication', 'Microsoft.Graph.Applications', 'Microsoft.Graph.Identity.SignIns', 'Microsoft.Graph.Users'
+            $PublicMods = 'Microsoft.Graph.Authentication', 'Microsoft.Graph.Applications', 'Microsoft.Graph.Identity.SignIns', 'Microsoft.Graph.Users',
+            'Microsoft.PowerShell.SecretManagement', 'SecretManagement.JustinGrote.CredMan'
+            $PublicVers = '1.22.0', '1.22.0', '1.22.0', '1.22.0',
+            '1.1.2', '1.0.0'
+
+            $ImportMods = $PublicMods # same list, or just the Graph ones if you don’t want to import SecretManagement right away
+
             $ModParams = @{
-                PublicModuleNames      = $PublicMods
-                PublicRequiredVersions = $PublicVers
-                ImportModuleNames      = $ImportMods
-                Scope                  = 'CurrentUser'
+                PublicModuleNames     = $PublicMods
+                PublicMinimumVersions = $PublicVers
+                ImportModuleNames     = $ImportMods
+                Scope                 = 'CurrentUser'
             }
             Initialize-TkModuleEnv @ModParams
+
             # Only connect to Graph
             $scopesNeeded = @(
                 'Application.ReadWrite.All',

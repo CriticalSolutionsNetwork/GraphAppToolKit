@@ -5,12 +5,12 @@
     The Initialize-TkModuleEnv function installs and imports specified PowerShell modules, either public or pre-release versions, based on the provided parameters. It also ensures that the PowerShellGet module is up-to-date and handles the installation scope, requiring elevation for 'AllUsers' scope. The function logs the installation and import process using Write-AuditLog.
     .PARAMETER PublicModuleNames
     An array of public module names to be installed and imported from the PowerShell Gallery. Each module must exist in the gallery.
-    .PARAMETER PublicRequiredVersions
-    An array of required versions corresponding to the public module names. Must match the count of PublicModuleNames.
+    .PARAMETER PublicMinimumVersions
+    An array of minimum versions corresponding to the public module names. Must match the count of PublicModuleNames.
     .PARAMETER PrereleaseModuleNames
     An array of pre-release module names to be installed from the PowerShell Gallery. Used for modules in preview/beta state.
-    .PARAMETER PrereleaseRequiredVersions
-    An array of required versions corresponding to the pre-release module names. Must match the count of PrereleaseModuleNames.
+    .PARAMETER PrereleaseMinimumVersions
+    An array of minimum versions corresponding to the pre-release module names. Must match the count of PrereleaseModuleNames.
     .PARAMETER Scope
     The installation scope, either 'AllUsers' (requires elevation) or 'CurrentUser' (default, no elevation needed).
     .PARAMETER ImportModuleNames
@@ -22,7 +22,7 @@
     .EXAMPLE
     $params1 = @{
         PublicModuleNames      = "PSnmap","Microsoft.Graph"
-        PublicRequiredVersions = "1.3.1","1.23.0"
+        PublicMinimumVersions = "1.3.1","1.23.0"
         ImportModuleNames      = "Microsoft.Graph.Authentication", "Microsoft.Graph.Identity.SignIns"
         Scope                  = "CurrentUser"
     }
@@ -31,7 +31,7 @@
     .EXAMPLE
     $params2 = @{
         PrereleaseModuleNames      = "Sampler", "Pester"
-        PrereleaseRequiredVersions = "2.1.5", "4.10.1"
+        PrereleaseMinimumVersions = "2.1.5", "4.10.1"
         Scope                      = "CurrentUser"
     }
     Initialize-TkModuleEnv @params2
@@ -56,10 +56,10 @@ function Initialize-TkModuleEnv {
         [Parameter(
             ParameterSetName = 'Public',
             Mandatory,
-            HelpMessage = 'Array of required versions corresponding to the public module names'
+            HelpMessage = 'Array of minimum versions corresponding to the public module names'
         )]
         [string[]]
-        $PublicRequiredVersions,
+        $PublicMinimumVersions,
 
         [Parameter(
             ParameterSetName = 'Prerelease',
@@ -72,10 +72,10 @@ function Initialize-TkModuleEnv {
         [Parameter(
             ParameterSetName = 'Prerelease',
             Mandatory,
-            HelpMessage = 'Array of required versions corresponding to the pre-release module names'
+            HelpMessage = 'Array of minimum versions corresponding to the pre-release module names'
         )]
         [string[]]
-        $PrereleaseRequiredVersions,
+        $PrereleaseMinimumVersions,
 
         [Parameter(
             HelpMessage = 'Installation scope, either AllUsers (requires admin) or CurrentUser'
@@ -91,12 +91,7 @@ function Initialize-TkModuleEnv {
         $ImportModuleNames = $null
     )
 
-    if (-not $script:LogString) {
-        Write-AuditLog -Start
-    }
-    else {
-        Write-AuditLog -BeginFunction
-    }
+    if (-not $script:LogString) { Write-AuditLog -Start } else { Write-AuditLog -BeginFunction }
     Write-AuditLog '###########################################################'
 
     try {
@@ -112,10 +107,7 @@ function Initialize-TkModuleEnv {
         $psGetModules = Get-Module -Name PowerShellGet -ListAvailable
         $hasNonDefaultVer = $false
         foreach ($mod in $psGetModules) {
-            if ($mod.Version -ne '1.0.0.1') {
-                $hasNonDefaultVer = $true
-                break
-            }
+            if ($mod.Version -ne '1.0.0.1') { $hasNonDefaultVer = $true; break }
         }
 
         if ($hasNonDefaultVer) {
@@ -125,7 +117,7 @@ function Initialize-TkModuleEnv {
             Write-AuditLog "Imported PowerShellGet version $($latestModule.Version)" -Severity Information
         }
         else {
-            if (-not(Test-IsAdmin)) {
+            if (-not (Test-IsAdmin)) {
                 Write-AuditLog 'PowerShellGet is version 1.0.0.1. Please run once as admin to update PowerShellGet.' -Severity Error
                 throw 'Elevation required to update PowerShellGet!'
             }
@@ -142,11 +134,10 @@ function Initialize-TkModuleEnv {
 
         # Step 2: Validate scope
         if ($Scope -eq 'AllUsers') {
-            if (-not(Test-IsAdmin)) {
+            if (-not (Test-IsAdmin)) {
                 Write-AuditLog "You must be an administrator to install in 'AllUsers' scope." -Severity Error
                 throw "Elevation required for 'AllUsers' scope."
-            }
-            else {
+            } else {
                 Write-AuditLog "Installing modules for 'AllUsers' scope." -Severity Information
             }
         }
@@ -154,21 +145,21 @@ function Initialize-TkModuleEnv {
         # Step 3: Determine module set
         $prerelease = $false
         if ($PSCmdlet.ParameterSetName -eq 'Public') {
-            $modules = $PublicModuleNames
-            $versions = $PublicRequiredVersions
+            $modules  = $PublicModuleNames
+            $versions = $PublicMinimumVersions
         }
         elseif ($PSCmdlet.ParameterSetName -eq 'Prerelease') {
-            $modules = $PrereleaseModuleNames
-            $versions = $PrereleaseRequiredVersions
+            $modules  = $PrereleaseModuleNames
+            $versions = $PrereleaseMinimumVersions
             $prerelease = $true
         }
 
         # Step 4: Install/Import each module
         for ($i = 0; $i -lt $modules.Count; $i++) {
             $m = $modules[$i]
-            $requiredVersion = $versions[$i] # Using index instead of IndexOf for reliability
+            $minVersion = $versions[$i]  # new name
             $installed = Get-Module -Name $m -ListAvailable |
-                Where-Object { [version]$_.Version -ge [version]$requiredVersion } |
+                Where-Object { [version]$_.Version -ge [version]$minVersion } |
                 Sort-Object Version -Descending |
                 Select-Object -First 1
 
@@ -178,16 +169,16 @@ function Initialize-TkModuleEnv {
             }
 
             if (-not $installed) {
-                $msgPrefix = if ($prerelease) { 'PreRelease' }else { 'stable' }
-                Write-AuditLog "The $msgPrefix module $m version $requiredVersion (or higher) is not installed." -Severity Warning
-                Write-AuditLog "Installing $m version $requiredVersion -AllowPrerelease:$prerelease."
+                $msgPrefix = if ($prerelease) { 'PreRelease' } else { 'stable' }
+                Write-AuditLog "The $msgPrefix module $m minimum version $minVersion is not installed." -Severity Warning
+                Write-AuditLog "Installing $m (minimum $minVersion) -AllowPrerelease:$prerelease."
 
                 try {
-                    Install-Module $m -Scope $Scope -RequiredVersion $requiredVersion -AllowPrerelease:$prerelease -ErrorAction Stop
+                    Install-Module $m -Scope $Scope -MinimumVersion $minVersion -AllowPrerelease:$prerelease -ErrorAction Stop
                     Write-AuditLog "$m module successfully installed!" -Severity Information
                 }
                 catch {
-                    Write-AuditLog "Failed to install $m v$requiredVersion`: $(${($_.Exception.Message)})" -Severity Error
+                    Write-AuditLog "Failed to install $m (min $minVersion): $(${($_.Exception.Message)})" -Severity Error
                     throw
                 }
 
@@ -217,7 +208,7 @@ function Initialize-TkModuleEnv {
                 }
             }
             else {
-                Write-AuditLog "$m v$($installed.Version) exists." -Severity Information
+                Write-AuditLog "$m v$($installed.Version) satisfies minimum $minVersion." -Severity Information
                 if ($SelectiveImports) {
                     foreach ($ModName in $SelectiveImports) {
                         Write-AuditLog "Importing SubModule: $ModName."
@@ -249,7 +240,6 @@ function Initialize-TkModuleEnv {
         Write-AuditLog "Module initialization failed: $($_.Exception.Message)" -Severity Error
         throw
     }
-    finally {
-        Write-AuditLog -EndFunction
-    }
+    finally { Write-AuditLog -EndFunction }
 }
+

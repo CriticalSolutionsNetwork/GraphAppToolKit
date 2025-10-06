@@ -5,6 +5,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed module installation logic to correctly register the module after build and import.  
+- Fixed parameter handling in module manifest and public functions for better consistency.  
+- Fixed minimum PowerShell version declaration and validation during install.  
+- Minor internal refactor related to domain-suffix optional parameter handling.  
+
+### Changed
+
+- Made the domain suffix optional during app name initialization for greater flexibility in tenant naming conventions.
+
+## [0.2.1] - 2025-03-17
+
 ### Added
 
 - Added Get-TkMsalToken cmdlet to retrieve an MSAL token using API calls.

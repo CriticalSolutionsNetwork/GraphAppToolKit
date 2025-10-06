@@ -45,6 +45,9 @@ function Connect-TkMsService {
         [Switch]
         $ExchangeOnline
     )
+    # Used Cmdlets
+    # Get-MgUser, Get-MgContext, Get-MgOrganization, Remove-MgContext, Connect-MgGraph, Disconnect-ExchangeOnline, Connect-ExchangeOnline
+
     # Begin Logging
     if (-not $script:LogString) {
         Write-AuditLog -Start
@@ -159,6 +162,9 @@ function Connect-TkMsService {
                 throw
             }
         }
+    }
+    else {
+        Write-AuditLog 'No service specified for connection.'
     }
     Write-AuditLog -EndFunction
 }

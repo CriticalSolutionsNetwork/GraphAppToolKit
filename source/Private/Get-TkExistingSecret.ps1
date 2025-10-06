@@ -26,15 +26,15 @@ function Get-TkExistingSecret {
         [string]$AppName,
         [string]$VaultName = 'GraphEmailAppLocalStore'
     )
-    Write-AuditLog -BeginFunction
+    if (-not $script:LogString) {
+        Write-AuditLog -Start
+    }
+    else {
+        Write-AuditLog -BeginFunction
+    }
     try {
         $ExistingSecret = Get-Secret -Name "$AppName" -Vault $VaultName -ErrorAction SilentlyContinue
-        if ($ExistingSecret) {
-            return $true
-        }
-        else {
-            return $false
-        }
+        return $null -ne $ExistingSecret
     }
     finally {
         Write-AuditLog -EndFunction

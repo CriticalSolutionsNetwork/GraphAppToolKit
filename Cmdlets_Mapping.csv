@@ -1,0 +1,29 @@
+Function Name,Visibility,Used Cmdlets
+Connect-TkMsService,Private,"Get-MgUser, Get-MgContext, Get-MgOrganization, Remove-MgContext, Connect-MgGraph, Disconnect-ExchangeOnline, Connect-ExchangeOnline"
+ConvertTo-ParameterSplat,Private,Write-AuditLog
+Get-TkExistingCert,Private,"Get-ChildItem, Where-Object, Remove-Item, Write-AuditLog"
+Get-TkExistingSecret,Private,"Get-Secret, Write-AuditLog"
+Get-TkMsalToken,Private,"Invoke-RestMethod, Write-AuditLog"
+Initialize-TkAppAuthCertificate,Private,"Get-ChildItem, New-SelfSignedCertificate, Write-AuditLog"
+Initialize-TkAppName,Private,Write-AuditLog
+Initialize-TkEmailAppParamsObject,Private,
+Initialize-TkM365AuditAppParamsObject,Private,
+Initialize-TkMemPolicyManagerAppParamsObject,Private,
+Initialize-TkModuleEnv,Private,"Install-Module, Import-Module, Get-Module, Write-AuditLog"
+Initialize-TkRequiredResourcePermissionObject,Private,"Get-MgServicePrincipal, Find-MgGraphPermission, Write-AuditLog"
+New-TkAppRegistration,Private,"Get-ChildItem, New-MgApplication, Write-AuditLog"
+New-TkAppSpOauth2Registration,Private,Write-AuditLog
+Connect-TkMsService,Private,"Get-MgUser, Get-MgContext, Get-MgOrganization, Remove-MgContext, Connect-MgGraph, Disconnect-ExchangeOnline, Connect-ExchangeOnline"
+ConvertTo-ParameterSplat,Private,Write-AuditLog
+Get-TkExistingCert,Public,"Get-ChildItem, Where-Object, Remove-Item, Write-AuditLog"
+Get-TkExistingSecret,Public,"Get-Secret, Write-AuditLog"
+Get-TkMsalToken,Public,"Invoke-RestMethod, Write-AuditLog"
+Initialize-TkAppAuthCertificate,Public,"Get-ChildItem, New-SelfSignedCertificate, Write-AuditLog"
+Initialize-TkAppName,Public,Write-AuditLog
+Initialize-TkEmailAppParamsObject,Public,
+Initialize-TkM365AuditAppParamsObject,Public,
+Initialize-TkMemPolicyManagerAppParamsObject,Public,
+Initialize-TkModuleEnv,Public,"Install-Module, Import-Module, Get-Module, Write-AuditLog"
+Initialize-TkRequiredResourcePermissionObject,Public,"Get-MgServicePrincipal, Find-MgGraphPermission, Write-AuditLog"
+New-TkAppRegistration,Public,"Get-ChildItem, New-MgApplication, Write-AuditLog"
+New-TkAppSpOauth2Registration,Public,Write-AuditLog
